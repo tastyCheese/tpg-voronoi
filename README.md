@@ -32,11 +32,12 @@ In no particular order:
 - [ ] Make it look nice
 - [ ] Make it work on mobile
 - [ ] Colour the areas
-- [ ] Zoom
+- [x] Zoom
 - [x] Allow csv *upload* of points
 - [x] And download
 - [x] Labels on photos
 - [ ] Labels on map
+- [ ] Highlight area containing current location
 
 ## Project Setup
 

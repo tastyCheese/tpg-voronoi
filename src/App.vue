@@ -25,8 +25,9 @@ import { RouterView } from 'vue-router';
 }
 
 .main-container {
-  max-width: 100%;
-  max-height: 90%;
+  overflow: hidden;
+  max-width: 100vw;
+  max-height: 90vh;
   display:flex;
   justify-content: center;
   align-items: center;

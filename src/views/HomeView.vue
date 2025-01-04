@@ -23,7 +23,8 @@ export default {
       longitude: 0,
       label: '',
       url: '',
-      csv: ''
+      csv: '',
+      zoomLevel: 0.5
     };
   },
   computed: {
@@ -31,10 +32,10 @@ export default {
       return this.points.map(point => [point.longitude, point.latitude]);
     },
     height () {
-      return this.width;
+      return window.innerHeight * .9;
     },
     width () {
-      return Math.min(window.innerWidth, window.innerHeight * .9);
+      return window.innerWidth;
     }
   },
   methods: {
@@ -115,6 +116,11 @@ export default {
       this.mesh = geoVoronoi(this.arrayPoints).cellMesh();
       localStorage.setItem('geo_points', JSON.stringify(this.points));
       this.chart();
+    },
+    zoom (direction: 'in' | 'out') {
+      this.zoomLevel = direction === 'in' ? Math.min(this.zoomLevel * 1.5, 15) : Math.max(this.zoomLevel / 1.5, 0.5);
+      this.projection.scale(Math.min(this.width, this.height) * this.zoomLevel);
+      this.chart();
     }
   },
   mounted () {
@@ -127,7 +133,8 @@ export default {
     });
     this.projection = d3.geoOrthographic()
       .fitExtent([[1, 1], [this.width - 1, this.height - 1]], this.sphere)
-      .rotate([0, -30]);
+      .rotate([0, -30])
+      .scale(Math.min(this.width, this.height) * this.zoomLevel);
     this.context = this.$refs.canvas.getContext('2d');
     this.mesh = geoVoronoi(this.arrayPoints).cellMesh();
     this.path = d3.geoPath(this.projection, this.context).pointRadius(1.5);
@@ -139,11 +146,19 @@ export default {
 <template>
   <main>
     <div ref="container" class="main-container">
+      <div class="field has-addons" style="position: absolute; top: 5%; left: 5%">
+        <div class="control">
+          <button class="button" @click="zoom('in')">+</button>
+        </div>
+        <div class="control">
+          <button class="button" @click="zoom('out')">-</button>
+        </div>
+      </div>
       <canvas ref="canvas" :height="height" :width="width"></canvas>
     </div>
     <div class="message is-primary">
       <div class="message-body">
-        <p>Add your photo locations below. Any changes are saved to your localStorage (like cookies), and are not uploaded or anything.</p>
+        <p>Add your photo locations below to display a voronoi diagram of the area closest to each photo. Any changes are saved to your localStorage (like cookies), and are not uploaded or anything.</p>
         <p>Import a csv (comma separated values - can be exported from excel) file with no column headers, columns should be latitude (req), longitude (req), label (opt), url (opt). Any repeat locations will be replaced, otherwise they will be added.</p>
       </div>
     </div>
