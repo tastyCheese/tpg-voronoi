@@ -6,8 +6,8 @@ A tool for creating Voronoi diagrams from a set of geolocated points. Designed f
 In no particular order:
 
 - [ ] Write this document
-- [ ] Successfully display photo points on the sphere
-- [ ] Display Voronoi diagram on the sphere
+- [x] Successfully display photo points on the sphere
+- [x] Display Voronoi diagram on the sphere
 - [ ] Appropriate credit to open source libraries/snippets & collaborators
 - [ ] Allow input of arbitrary points
 - [ ] Receive input as lat/long (most people's default?) and convert to long/lat (what d3 expects)
