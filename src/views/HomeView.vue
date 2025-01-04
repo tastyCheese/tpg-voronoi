@@ -24,7 +24,19 @@ export default {
       label: '',
       url: '',
       csv: '',
-      zoomLevel: 0.5
+      zoomLevel: 0.5,
+      colours: [
+        'rgba(31, 119, 180',
+        'rgba(255, 127, 14',
+        'rgba(44, 160, 44',
+        'rgba(214, 39, 40',
+        'rgba(148, 103, 189',
+        'rgba(140, 86, 75',
+        'rgba(227, 119, 194',
+        'rgba(127, 127, 127',
+        'rgba(188, 189, 34',
+        'rgba(23, 190, 207',
+      ]
     };
   },
   computed: {
@@ -42,11 +54,11 @@ export default {
     chart () {
       return d3.select(this.context.canvas)
         .call(drag(this.projection).on("drag.render", this.dragged))
-        .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints)
+        .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours)
         .node();
     },
     dragged () {
-      render(null, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints);
+      render(null, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours);
     },
     addPoints () {
       this.points.push(new Point(this.longitude, this.latitude, this.label, this.url));
@@ -54,13 +66,13 @@ export default {
       this.latitude = 0;
       this.label = '';
       this.url = '';
-      this.mesh = geoVoronoi(this.arrayPoints).cellMesh();
+      this.mesh = geoVoronoi(this.arrayPoints).polygons();
       localStorage.setItem('geo_points', JSON.stringify(this.points));
       this.chart();
     },
     removePoint (index: number) {
       this.points.splice(index, 1);
-      this.mesh = geoVoronoi(this.arrayPoints).cellMesh();
+      this.mesh = geoVoronoi(this.arrayPoints).polygons();
       localStorage.setItem('geo_points', JSON.stringify(this.points));
       this.chart();
     },
@@ -113,7 +125,7 @@ export default {
           this.points.push(p);
         }
       });
-      this.mesh = geoVoronoi(this.arrayPoints).cellMesh();
+      this.mesh = geoVoronoi(this.arrayPoints).polygons();
       localStorage.setItem('geo_points', JSON.stringify(this.points));
       this.chart();
     },
@@ -121,6 +133,10 @@ export default {
       this.zoomLevel = direction === 'in' ? Math.min(this.zoomLevel * 1.5, 15) : Math.max(this.zoomLevel / 1.5, 0.5);
       this.projection.scale(Math.min(this.width, this.height) * this.zoomLevel);
       this.chart();
+    },
+    backgroundColour (index: number) {
+      const mod = index % this.colours.length;
+      return { backgroundColor: this.colours[mod] };
     }
   },
   mounted () {
@@ -136,7 +152,7 @@ export default {
       .rotate([0, -30])
       .scale(Math.min(this.width, this.height) * this.zoomLevel);
     this.context = this.$refs.canvas.getContext('2d');
-    this.mesh = geoVoronoi(this.arrayPoints).cellMesh();
+    this.mesh = geoVoronoi(this.arrayPoints).polygons();
     this.path = d3.geoPath(this.projection, this.context).pointRadius(1.5);
     this.chart();
   }
@@ -158,7 +174,9 @@ export default {
     </div>
     <div class="message is-primary">
       <div class="message-body">
+        <p>Made for <a href="https://bit.ly/tpgrules">Travel Picture Game</a></p>
         <p>Add your photo locations below to display a voronoi diagram of the area closest to each photo. Any changes are saved to your localStorage (like cookies), and are not uploaded or anything.</p>
+        <p>Pasting a lat, long into the latitude box will auto split them for you.</p>
         <p>Import a csv (comma separated values - can be exported from excel) file with no column headers, columns should be latitude (req), longitude (req), label (opt), url (opt). Any repeat locations will be replaced, otherwise they will be added.</p>
       </div>
     </div>
@@ -180,6 +198,7 @@ export default {
       <table class="table">
         <thead>
           <tr>
+            <td></td>
             <th>Latitude</th>
             <th>Longitude</th>
             <th>Label</th>
@@ -188,19 +207,21 @@ export default {
           </tr>
         </thead>
         <tbody>
+        <tr>
+          <td></td>
+          <td><input type="number" class="input is-small" v-model.number="latitude" @paste.prevent="parseCoordinates"></td>
+          <td><input type="number" class="input is-small" v-model.number="longitude"></td>
+          <td><input type="text" class="input is-small" placeholder="Label" v-model="label"></td>
+          <td><input type="text" class="input is-small" placeholder="URL" v-model="url"></td>
+          <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
+        </tr>
           <tr v-for="(point, index) in points" :key="index">
+            <td :style="backgroundColour(index)">&nbsp;</td>
             <td>{{ point.latitude }}</td>
             <td>{{ point.longitude }}</td>
             <td><input type="text" class="input is-small" placeholder="Label" v-model="point.label" @blur="save"></td>
             <td><img v-if="point.url" :src="point.url" class="thumbnail"><input v-else type="text" class="input is-small" placeholder="URL" v-model="point.url" @blur="save"></td>
             <td><button class="button is-small is-danger" @click="removePoint(index)">X</button></td>
-          </tr>
-          <tr>
-            <td><input type="number" class="input is-small" v-model.number="latitude" @paste.prevent="parseCoordinates"></td>
-            <td><input type="number" class="input is-small" v-model.number="longitude"></td>
-            <td><input type="text" class="input is-small" placeholder="Label" v-model="label"></td>
-            <td><input type="text" class="input is-small" placeholder="URL" v-model="url"></td>
-            <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
           </tr>
         </tbody>
       </table>

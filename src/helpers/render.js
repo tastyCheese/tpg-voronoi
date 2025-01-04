@@ -1,4 +1,4 @@
-const render = (event, context, path, width, height, borders, land, mesh, sphere, points) => {
+const render = (event, context, path, width, height, borders, land, mesh, sphere, points, colours) => {
   context.clearRect(0, 0, width, height);
 
   context.beginPath();
@@ -21,11 +21,18 @@ const render = (event, context, path, width, height, borders, land, mesh, sphere
 
   // context.beginPath(), path(arc), context.stroke();
 
-  context.beginPath();
-  path(mesh);
-  context.lineWidth = 0.5;
-  context.strokeStyle = "#000";
-  context.stroke();
+  let i = 0;
+  for (const polygon of mesh.features) {
+    const mod = i % colours.length;
+    context.beginPath();
+    path(polygon);
+    context.lineWidth = 1;
+    context.strokeStyle = colours[mod] + ')';
+    context.stroke();
+    context.fillStyle = colours[mod] + ',0.5)';
+    context.fill();
+    i++;
+  }
 
   context.beginPath();
   path({type: "MultiPoint", coordinates: points});

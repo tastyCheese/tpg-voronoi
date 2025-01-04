@@ -29,9 +29,9 @@ In no particular order:
 - [ ] Set up github actions for deployment
 - [ ] Make TypeScript stop complaining about everything
 - [x] Make it easy to paste a google formatted lat, long string in one
-- [ ] Make it look nice
+- [ ] Make it look nicer
 - [ ] Make it work on mobile
-- [ ] Colour the areas
+- [x] Colour the areas
 - [x] Zoom
 - [x] Allow csv *upload* of points
 - [x] And download
