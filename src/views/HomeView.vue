@@ -8,10 +8,10 @@ import world from '../data/countries.json';
 
 export default {
   data: () => {
+    const points: number[][] = [];
     return {
-      points: [
-        [-1.5636426, 54.777029], [10.16699, 46.21582], [-6.787428367747737, 57.423226306079734], [-8.024211882515775, 31.602785170501562]
-      ],
+      points,
+        // [-1.5636426, 54.777029], [10.16699, 46.21582], [-6.787428367747737, 57.423226306079734], [-8.024211882515775, 31.602785170501562]
       land: topojson.feature(world, world.objects.land),
       borders: topojson.mesh(world, world.objects.countries, (a, b) => a !== b),
       sphere: ({ type: 'Sphere' }),
@@ -39,15 +39,20 @@ export default {
     addPoints () {
       this.points.push([this.longitude, this.latitude]);
       this.mesh = geoVoronoi(this.points).cellMesh();
+      localStorage.setItem('geo_points', JSON.stringify(this.points));
       this.chart();
     },
     removePoint (index: number) {
       this.points.splice(index, 1);
       this.mesh = geoVoronoi(this.points).cellMesh();
+      localStorage.setItem('geo_points', JSON.stringify(this.points));
       this.chart();
     }
   },
   mounted () {
+    if (localStorage.getItem('geo_points') !== null) {
+      this.points = JSON.parse(localStorage.getItem('geo_points'));
+    }
     this.projection = d3.geoOrthographic()
       .fitExtent([[1, 1], [this.width - 1, this.height - 1]], this.sphere)
       .rotate([0, -30]);
@@ -62,6 +67,11 @@ export default {
 <template>
   <main>
     <canvas ref="canvas" :height="height" :width="width"></canvas>
+    <div class="message is-primary">
+      <div class="message-body">
+        <p>Add your photo locations below. Any changes are saved to your localStorage (like cookies), and are not uploaded or anything.</p>
+      </div>
+    </div>
     <div class="table-container">
       <table class="table">
         <thead>

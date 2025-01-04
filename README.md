@@ -11,7 +11,7 @@ In no particular order:
 - [ ] Appropriate credit to open source libraries/snippets & collaborators
 - [x] Allow input of arbitrary points
 - [x] Receive input as lat/long (most people's default?) and convert to long/lat (what d3 expects)
-- [ ] Implement localStorage for saving points
+- [x] Implement localStorage for saving points
 - [x] Host somewhere (I have a plan)
 - [ ] Set up github actions for deployment
 - [ ] Make TypeScript stop complaining about everything
