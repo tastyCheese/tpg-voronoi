@@ -15,8 +15,6 @@ export default {
       land: topojson.feature(world, world.objects.land),
       borders: topojson.mesh(world, world.objects.countries, (a, b) => a !== b),
       sphere: ({ type: 'Sphere' }),
-      height: 928,
-      width: 928,
       path: undefined,
       projection: undefined,
       context: undefined,
@@ -24,12 +22,19 @@ export default {
       latitude: 0,
       longitude: 0,
       label: '',
-      url: ''
+      url: '',
+      csv: ''
     };
   },
   computed: {
     arrayPoints (): number[][] {
       return this.points.map(point => [point.longitude, point.latitude]);
+    },
+    height () {
+      return this.width;
+    },
+    width () {
+      return Math.min(window.innerWidth, window.innerHeight * .9);
     }
   },
   methods: {
@@ -74,6 +79,42 @@ export default {
           this.latitude = parseFloat(pastedData);
         }
       }
+    },
+    downloadCsv () {
+      const csv = this.points.map(p => [p.latitude, p.longitude, p.label, p.url].join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'geo_points.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+    readFile () {
+      const csv = this.$refs.csv.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.csv = reader.result;
+      };
+      reader.readAsText(csv);
+    },
+    importCsv () {
+      this.$refs.csv.value = '';
+      const points = this.csv.split('\n').map((p: string) => {
+        const [longitude, latitude, label, url] = p.split(',');
+        return new Point(parseFloat(latitude), parseFloat(longitude), label, url);
+      });
+      points.forEach(p => {
+        const index = this.points.findIndex(point => point.latitude === p.latitude && point.longitude === p.longitude);
+        if (index > -1) {
+          this.points[index] = p;
+        } else {
+          this.points.push(p);
+        }
+      });
+      this.mesh = geoVoronoi(this.arrayPoints).cellMesh();
+      localStorage.setItem('geo_points', JSON.stringify(this.points));
+      this.chart();
     }
   },
   mounted () {
@@ -97,10 +138,27 @@ export default {
 
 <template>
   <main>
-    <canvas ref="canvas" :height="height" :width="width"></canvas>
+    <div ref="container" class="main-container">
+      <canvas ref="canvas" :height="height" :width="width"></canvas>
+    </div>
     <div class="message is-primary">
       <div class="message-body">
         <p>Add your photo locations below. Any changes are saved to your localStorage (like cookies), and are not uploaded or anything.</p>
+        <p>Import a csv (comma separated values - can be exported from excel) file with no column headers, columns should be latitude (req), longitude (req), label (opt), url (opt). Any repeat locations will be replaced, otherwise they will be added.</p>
+      </div>
+    </div>
+    <div class="field has-addons">
+      <div class="control">
+        <button class="button is-small is-static">Import CSV</button>
+      </div>
+      <div class="control">
+        <input class="input is-small" type="file" ref="csv" @change="readFile()" />
+      </div>
+      <div class="control">
+        <button class="button is-small is-info" @click="importCsv()">Import CSV</button>
+      </div>
+      <div class="control">
+        <button class="button is-small is-primary" @click="downloadCsv()">Export CSV</button>
       </div>
     </div>
     <div class="table-container">

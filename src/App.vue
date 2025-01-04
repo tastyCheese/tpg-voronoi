@@ -18,13 +18,17 @@ import { RouterView } from 'vue-router';
 <style lang="scss">
 @use '../node_modules/bulma/bulma.scss';
 
-canvas {
-  background: white;
-}
-
 .thumbnail {
   max-width: 120px;
   max-height: 120px;
   display: inline-block;
+}
+
+.main-container {
+  max-width: 100%;
+  max-height: 90%;
+  display:flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

@@ -33,8 +33,8 @@ In no particular order:
 - [ ] Make it work on mobile
 - [ ] Colour the areas
 - [ ] Zoom
-- [ ] Allow csv *upload* of points
-- [ ] And download
+- [x] Allow csv *upload* of points
+- [x] And download
 - [x] Labels on photos
 - [ ] Labels on map
 
