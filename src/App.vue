@@ -21,4 +21,10 @@ import { RouterView } from 'vue-router';
 canvas {
   background: white;
 }
+
+.thumbnail {
+  max-width: 120px;
+  max-height: 120px;
+  display: inline-block;
+}
 </style>
