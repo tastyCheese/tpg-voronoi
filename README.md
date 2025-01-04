@@ -1,6 +1,6 @@
 # tpg-voronoi
 
-A tool for creating Voronoi diagrams from a set of geolocated points. Designed for finding the closest photos to an arbitrary point for The Photo Game.
+A tool for creating Voronoi diagrams from a set of geolocated points. Designed for finding the closest photos to an arbitrary point for Travel Pics Game.
 
 ## TODO/Wish list
 In no particular order:
@@ -14,6 +14,7 @@ In no particular order:
 - [ ] Implement localStorage for saving points
 - [ ] Host somewhere (I have a plan)
 - [ ] Set up github actions for deployment
+- [ ] Make TypeScript stop complaining about everything
 
 ## Project Setup
 
