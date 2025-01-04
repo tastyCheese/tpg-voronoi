@@ -20,7 +20,9 @@ export default {
       path: undefined,
       projection: undefined,
       context: undefined,
-      mesh: undefined
+      mesh: undefined,
+      latitude: 0,
+      longitude: 0
     };
   },
   methods: {
@@ -33,6 +35,16 @@ export default {
     dragged () {
       console.log('dragged', this.path);
       render(null, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.points);
+    },
+    addPoints () {
+      this.points.push([this.longitude, this.latitude]);
+      this.mesh = geoVoronoi(this.points).cellMesh();
+      this.chart();
+    },
+    removePoint (index: number) {
+      this.points.splice(index, 1);
+      this.mesh = geoVoronoi(this.points).cellMesh();
+      this.chart();
     }
   },
   mounted () {
@@ -50,5 +62,28 @@ export default {
 <template>
   <main>
     <canvas ref="canvas" :height="height" :width="width"></canvas>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(point, index) in points" :key="index">
+            <td>{{ point[1] }}</td>
+            <td>{{ point[0] }}</td>
+            <td><button class="button is-small is-danger" @click="removePoint(index)">X</button></td>
+          </tr>
+          <tr>
+            <td><input type="number" class="input is-small" v-model.number="latitude"></td>
+            <td><input type="number" class="input is-small" v-model.number="longitude"></td>
+            <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </main>
 </template>

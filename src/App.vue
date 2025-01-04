@@ -15,5 +15,10 @@ import { RouterView } from 'vue-router';
   <RouterView />
 </template>
 
-<style scoped>
+<style lang="scss">
+@use '../node_modules/bulma/bulma.scss';
+
+canvas {
+  background: white;
+}
 </style>
