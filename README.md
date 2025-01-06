@@ -29,7 +29,7 @@ In no particular order:
 - [ ] Set up github actions for deployment
 - [ ] Make TypeScript stop complaining about everything
 - [x] Make it easy to paste a google formatted lat, long string in one
-- [ ] Make it look nicer
+- [x] Make it look nicer
 - [ ] Make it work on mobile
 - [x] Colour the areas
 - [x] Zoom
@@ -37,7 +37,7 @@ In no particular order:
 - [x] And download
 - [x] Labels on photos
 - [ ] Labels on map
-- [ ] Highlight area containing current location
+- [x] Highlight area containing current location
 
 ## Project Setup
 

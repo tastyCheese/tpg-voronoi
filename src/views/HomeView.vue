@@ -10,21 +10,30 @@ import Point from "@/classes/point.ts";
 export default {
   data: () => {
     const points: Point[] = [];
+    const sphere: d3.GeoSphere = { type: 'Sphere' };
+    const zoomLevel = 0.5;
+    const projection = d3.geoOrthographic()
+      .fitExtent([[1, 1], [window.innerWidth - 1, window.innerHeight * .9 - 1]], sphere)
+      .rotate([0, -30])
+      .scale(Math.min(window.innerWidth, window.innerHeight * .9) * zoomLevel);
+    const mesh = geoVoronoi([]).polygons();
+    const found = undefined;
     return {
       points,
       land: topojson.feature(world, world.objects.land),
       borders: topojson.mesh(world, world.objects.countries, (a, b) => a !== b),
-      sphere: ({ type: 'Sphere' }),
+      sphere,
       path: undefined,
-      projection: undefined,
+      projection,
       context: undefined,
-      mesh: undefined,
+      mesh,
+      found,
       latitude: 0,
       longitude: 0,
       label: '',
       url: '',
       csv: '',
-      zoomLevel: 0.5,
+      zoomLevel,
       colours: [
         'rgba(31, 119, 180',
         'rgba(255, 127, 14',
@@ -36,7 +45,9 @@ export default {
         'rgba(127, 127, 127',
         'rgba(188, 189, 34',
         'rgba(23, 190, 207',
-      ]
+      ],
+      currentLatitude: 0,
+      currentLongitude: 0
     };
   },
   computed: {
@@ -52,13 +63,16 @@ export default {
   },
   methods: {
     chart () {
-      return d3.select(this.context.canvas)
-        .call(drag(this.projection).on("drag.render", this.dragged))
-        .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours)
-        .node();
+      if (this.context !== undefined && this.path !== undefined) {
+        const canvas = this.context.canvas;
+        return d3.select(canvas)
+          .call(drag(this.projection).on("drag.render", this.dragged))
+          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found)
+          .node();
+      }
     },
     dragged () {
-      render(null, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours);
+      render(null, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found);
     },
     addPoints () {
       this.points.push(new Point(this.longitude, this.latitude, this.label, this.url));
@@ -67,17 +81,18 @@ export default {
       this.label = '';
       this.url = '';
       this.mesh = geoVoronoi(this.arrayPoints).polygons();
-      localStorage.setItem('geo_points', JSON.stringify(this.points));
-      this.chart();
+      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+      this.save();
     },
     removePoint (index: number) {
       this.points.splice(index, 1);
       this.mesh = geoVoronoi(this.arrayPoints).polygons();
-      localStorage.setItem('geo_points', JSON.stringify(this.points));
-      this.chart();
+      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+      this.save();
     },
     save () {
       localStorage.setItem('geo_points', JSON.stringify(this.points));
+      localStorage.setItem('current_location', JSON.stringify({ latitude: this.currentLatitude, longitude: this.currentLongitude }));
       this.chart();
     },
     parseCoordinates (event: ClipboardEvent) {
@@ -107,7 +122,7 @@ export default {
       const csv = this.$refs.csv.files[0];
       const reader = new FileReader();
       reader.onload = () => {
-        this.csv = reader.result;
+        this.csv = reader.result ? reader.result.toString() : '';
       };
       reader.readAsText(csv);
     },
@@ -126,8 +141,8 @@ export default {
         }
       });
       this.mesh = geoVoronoi(this.arrayPoints).polygons();
-      localStorage.setItem('geo_points', JSON.stringify(this.points));
-      this.chart();
+      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+      this.save();
     },
     zoom (direction: 'in' | 'out') {
       this.zoomLevel = direction === 'in' ? Math.min(this.zoomLevel * 1.5, 15) : Math.max(this.zoomLevel / 1.5, 0.5);
@@ -137,6 +152,21 @@ export default {
     backgroundColour (index: number) {
       const mod = index % this.colours.length;
       return { backgroundColor: this.colours[mod] };
+    },
+    highlightLine (index: number) {
+      if (this.currentLongitude !== 0 && this.currentLatitude !== 0 && this.found !== undefined && this.found === index) {
+        return { backgroundColor: 'rgb(0, 0, 255)' };
+      }
+    }
+  },
+  watch: {
+    currentLatitude () {
+      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+      this.save();
+    },
+    currentLongitude () {
+      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+      this.save();
     }
   },
   mounted () {
@@ -147,13 +177,13 @@ export default {
         return new Point(p.longitude, p.latitude, p.label, p.url);
       }
     });
-    this.projection = d3.geoOrthographic()
-      .fitExtent([[1, 1], [this.width - 1, this.height - 1]], this.sphere)
-      .rotate([0, -30])
-      .scale(Math.min(this.width, this.height) * this.zoomLevel);
+    const currentLocation = JSON.parse(localStorage.getItem('current_location') ?? '{"latitude": 0, "longitude": 0}');
+    this.currentLatitude = currentLocation.latitude;
+    this.currentLongitude = currentLocation.longitude;
     this.context = this.$refs.canvas.getContext('2d');
-    this.mesh = geoVoronoi(this.arrayPoints).polygons();
     this.path = d3.geoPath(this.projection, this.context).pointRadius(1.5);
+    this.mesh = geoVoronoi(this.arrayPoints).polygons();
+    this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
     this.chart();
   }
 };
@@ -168,6 +198,17 @@ export default {
         </div>
         <div class="control">
           <button class="button" @click="zoom('out')">-</button>
+        </div>
+      </div>
+      <div class="field has-addons" style="position: absolute; top: 5%; right: 5%">
+        <div class="control">
+          <button class="button is-small is-static">Current Loc</button>
+        </div>
+        <div class="control">
+          <input type="number" v-model.number="currentLatitude" placeholder="Latitude" class="input is-small">
+        </div>
+        <div class="control">
+          <input type="number" v-model.number="currentLongitude" placeholder="Longitude" class="input is-small">
         </div>
       </div>
       <canvas ref="canvas" :height="height" :width="width"></canvas>
@@ -215,7 +256,7 @@ export default {
           <td><input type="text" class="input is-small" placeholder="URL" v-model="url"></td>
           <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
         </tr>
-          <tr v-for="(point, index) in points" :key="index">
+          <tr v-for="(point, index) in points" :key="index" :style="highlightLine(index)">
             <td :style="backgroundColour(index)">&nbsp;</td>
             <td>{{ point.latitude }}</td>
             <td>{{ point.longitude }}</td>
