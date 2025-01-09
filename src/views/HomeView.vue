@@ -215,7 +215,7 @@ export default {
     </div>
     <div class="message is-primary">
       <div class="message-body">
-        <p>Made for <a href="https://bit.ly/tpgrules">Travel Picture Game</a></p>
+        <p>Made for <a href="https://bit.ly/tpgrules">Travel Picture Game</a> by scottytremaine. Check out the <a href="https://github.com/npfedwards/tpg-voronoi">Github repository</a> if you want to contribute.</p>
         <p>Add your photo locations below to display a voronoi diagram of the area closest to each photo. Any changes are saved to your localStorage (like cookies), and are not uploaded or anything.</p>
         <p>Pasting a lat, long into the latitude box will auto split them for you.</p>
         <p>Import a csv (comma separated values - can be exported from excel) file with no column headers, columns should be latitude (req), longitude (req), label (opt), url (opt). Any repeat locations will be replaced, otherwise they will be added.</p>
