@@ -191,7 +191,7 @@ export default {
 
 <template>
   <main>
-    <div ref="container" class="main-container">
+    <div ref="container" class="main-container" @wheel="(e) => {if (e.ctrlKey) {e.preventDefault(); zoom(e.deltaY < 0 ? 'in' : 'out')}}">
       <div class="field has-addons" style="position: absolute; top: 5%; left: 5%">
         <div class="control">
           <button class="button" @click="zoom('in')">+</button>
