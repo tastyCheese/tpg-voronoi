@@ -13,6 +13,12 @@ import { RouterView } from 'vue-router';
 <!--  </header>-->
 
   <RouterView />
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>TPG Voronoi is an open source project managed by <a href="https://github.com/npfedwards">scottytremaine (Nathan Edwards)</a></p>
+      <p><small><a href="https://www.flaticon.com/free-icons/camera" title="camera icons">Camera icons created by Freepik - Flaticon</a></small></p>
+    </div>
+  </footer>
 </template>
 
 <style lang="scss">
