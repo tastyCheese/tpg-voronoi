@@ -43,8 +43,8 @@ const drag = (projection) => {
       q1 = versor.multiply([Math.sqrt(1 - s * s), 0, 0, c * s], q1);
     }
 
-    let rotation_vector = versor.rotation(q1)
-    rotation_vector[2] = 0
+    const rotation_vector = versor.rotation(q1);
+    rotation_vector[2] = 0;
     projection.rotate(rotation_vector);
 
     // In vicinity of the antipode (unstable) of q0, restart.
