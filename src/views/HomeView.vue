@@ -11,7 +11,7 @@ export default {
   data: () => {
     const points: Point[] = [];
     const sphere: d3.GeoSphere = { type: 'Sphere' };
-    const zoomLevel = 0.5;
+    const zoomLevel: number = 0.5;
     const projection = d3.geoOrthographic()
       .fitExtent([[1, 1], [window.innerWidth - 1, window.innerHeight * .9 - 1]], sphere)
       .rotate([0, -30])
@@ -23,9 +23,9 @@ export default {
       land: topojson.feature(world, world.objects.land),
       borders: topojson.mesh(world, world.objects.countries, (a, b) => a !== b),
       sphere,
-      path: undefined,
+      path: null,
       projection,
-      context: undefined,
+      context: null,
       mesh,
       found,
       latitude: 0,
