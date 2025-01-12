@@ -144,10 +144,16 @@ export default {
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
       this.save();
     },
-    zoom (direction: 'in' | 'out') {
-      this.zoomLevel = direction === 'in' ? Math.min(this.zoomLevel * 1.5, 15) : Math.max(this.zoomLevel / 1.5, 0.5);
+    zoom (direction: 'in' | 'out', scale: number = 1.5) {
+      this.zoomLevel = direction === 'in' ? Math.min(this.zoomLevel * scale, 15) : Math.max(this.zoomLevel / scale, 0.5);
       this.projection.scale(Math.min(this.width, this.height) * this.zoomLevel);
       this.chart();
+    },
+    wheelZoom (event: WheelEvent) {
+      if (event.ctrlKey) {
+        event.preventDefault();
+        this.zoom(event.deltaY > 0 ? 'out' : 'in', 1.2);
+      }
     },
     backgroundColour (index: number) {
       const mod = index % this.colours.length;
@@ -182,8 +188,10 @@ export default {
     this.currentLongitude = currentLocation.longitude;
     this.context = this.$refs.canvas.getContext('2d');
     this.path = d3.geoPath(this.projection, this.context).pointRadius(1.5);
-    this.mesh = geoVoronoi(this.arrayPoints).polygons();
-    this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+    if (this.arrayPoints.length > 0) {
+      this.mesh = geoVoronoi(this.arrayPoints).polygons();
+      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+    }
     this.chart();
   }
 };
@@ -191,7 +199,7 @@ export default {
 
 <template>
   <main>
-    <div ref="container" class="main-container">
+    <div ref="container" class="main-container" @wheel="wheelZoom($event)">
       <div class="field has-addons" style="position: absolute; top: 5%; left: 5%">
         <div class="control">
           <button class="button" @click="zoom('in')">+</button>
