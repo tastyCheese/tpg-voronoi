@@ -1,4 +1,25 @@
-const render = (event, context, path, width, height, borders, land, mesh, sphere, points, colours, lat, lng, found) => {
+import {type GeoPath } from "d3";
+import * as GeoJSON from "geojson";
+import * as d3 from "d3";
+import type Point from "@/classes/point.ts";
+import {type Selection} from "d3-selection";
+
+const render = (
+  event: Selection<never, unknown, null, undefined> | null,
+  context: CanvasRenderingContext2D,
+  path: GeoPath,
+  width: number,
+  height: number,
+  borders: GeoJSON.MultiLineString,
+  land: GeoJSON.Feature,
+  mesh: GeoJSON.FeatureCollection,
+  sphere: d3.GeoSphere,
+  points: Point[],
+  colours: string[],
+  lat: number,
+  lng: number,
+  found: number | undefined): void => {
+  console.log(typeof event);
   context.clearRect(0, 0, width, height);
 
   context.beginPath();
@@ -43,7 +64,7 @@ const render = (event, context, path, width, height, borders, land, mesh, sphere
   }
 
   context.beginPath();
-  path({type: "MultiPoint", coordinates: points});
+  path({type: "MultiPoint", coordinates: points.map(point => [point.longitude, point.latitude])});
   context.fillStyle = "#f00";
   context.fill();
 
