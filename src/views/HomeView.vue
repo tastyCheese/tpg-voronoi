@@ -119,7 +119,11 @@ export default {
       URL.revokeObjectURL(url);
     },
     readFile () {
-      const csv = this.$refs.csv.files[0];
+      const fileList = (this.$refs.csv as HTMLInputElement)?.files;
+      const csv = (fileList || [])[0];
+      if (!csv) {
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         this.csv = reader.result ? reader.result.toString() : '';
@@ -127,7 +131,7 @@ export default {
       reader.readAsText(csv);
     },
     importCsv () {
-      this.$refs.csv.value = '';
+      (this.$refs.csv as HTMLInputElement).value = '';
       const points = this.csv.split('\n').map((p: string) => {
         const [longitude, latitude, label, url] = p.split(',');
         return new Point(parseFloat(latitude), parseFloat(longitude), label, url);
