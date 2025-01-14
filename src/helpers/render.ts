@@ -1,5 +1,5 @@
 import {type GeoPath } from "d3";
-import * as GeoJSON from "geojson";
+// import * as GeoJSON from "geojson";
 import * as d3 from "d3";
 import type Point from "@/classes/point.ts";
 import {type Selection} from "d3-selection";
@@ -19,7 +19,6 @@ const render = (
   lat: number,
   lng: number,
   found: number | undefined): void => {
-  console.log(typeof event);
   context.clearRect(0, 0, width, height);
 
   context.beginPath();
