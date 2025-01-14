@@ -1,6 +1,5 @@
-import {type GeoPath } from "d3";
-import * as GeoJSON from "geojson";
-import * as d3 from "d3";
+import {type GeoPath, type GeoSphere} from "d3";
+import {type MultiLineString, type Feature, type FeatureCollection} from "geojson";
 import type Point from "@/classes/point.ts";
 import {type Selection} from "d3-selection";
 
@@ -10,16 +9,15 @@ const render = (
   path: GeoPath,
   width: number,
   height: number,
-  borders: GeoJSON.MultiLineString,
-  land: GeoJSON.Feature,
-  mesh: GeoJSON.FeatureCollection,
-  sphere: d3.GeoSphere,
+  borders: MultiLineString,
+  land: Feature,
+  mesh: FeatureCollection,
+  sphere: GeoSphere,
   points: Point[],
   colours: string[],
   lat: number,
   lng: number,
   found: number | undefined): void => {
-  console.log(typeof event);
   context.clearRect(0, 0, width, height);
 
   context.beginPath();
@@ -64,7 +62,7 @@ const render = (
   }
 
   context.beginPath();
-  path({type: "MultiPoint", coordinates: points.map(point => [point.longitude, point.latitude])});
+  path({type: "MultiPoint", coordinates: points});
   context.fillStyle = "#f00";
   context.fill();
 
