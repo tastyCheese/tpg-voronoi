@@ -13,6 +13,10 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: SSH server key setup
+        run: |
+          ${{ secrets.HOST_KEY }} >> ~/.ssh/known_hosts
+        shell: bash
       - name: Deploy
         if: github.ref == 'refs/heads/master'
         run: |
