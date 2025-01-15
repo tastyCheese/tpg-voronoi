@@ -8,36 +8,15 @@ Website is hosted [here](https://tpg.scottytremaine.uk/)
 
 ## Credits
 
-This project is by Nathan Edwards (scottytremaine on discord).
+This project is by [Nathan Edwards](https://github.com/npfedwards) (scottytremaine on discord).
 
 The voronoi diagram is created using the [d3](https://www.npmjs.com/package/d3) library with [d3-geo-voronoi](https://www.npmjs.com/package/d3-geo-voronoi).
 
 Basis for the initial code is from [this](https://observablehq.com/@d3/world-airports-voronoi) and [this](https://observablehq.com/@d3/world-tour)
 
+### Contributors
 
-## TODO/Wish list
-In no particular order:
-
-- [x] Write this document
-- [x] Successfully display photo points on the sphere
-- [x] Display Voronoi diagram on the sphere
-- [x] Appropriate credit to open source libraries/snippets & collaborators
-- [x] Allow input of arbitrary points
-- [x] Receive input as lat/long (most people's default?) and convert to long/lat (what d3 expects)
-- [x] Implement localStorage for saving points
-- [x] Host somewhere (I have a plan)
-- [ ] Set up github actions for deployment
-- [ ] Make TypeScript stop complaining about everything
-- [x] Make it easy to paste a google formatted lat, long string in one
-- [x] Make it look nicer
-- [ ] Make it work on mobile
-- [x] Colour the areas
-- [x] Zoom
-- [x] Allow csv *upload* of points
-- [x] And download
-- [x] Labels on photos
-- [ ] Labels on map
-- [x] Highlight area containing current location
+- [tastyCheese (Gleb Pavliuk)](https://github.com/tastyCheese)
 
 ## Project Setup
 
