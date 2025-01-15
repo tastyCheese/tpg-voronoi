@@ -12,6 +12,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@types/geojson": "^7946.0.15",
     "bulma": "^1.0.3",
     "d3": "^7.9.0",
     "d3-geo-voronoi": "^2.1.0",

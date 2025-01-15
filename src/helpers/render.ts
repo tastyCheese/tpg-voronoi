@@ -1,19 +1,18 @@
-import {type GeoPath, type GeoSphere} from "d3";
-import {type MultiLineString, type Feature, type FeatureCollection} from "geojson";
-import type Point from "@/classes/point.ts";
-import {type Selection} from "d3-selection";
+import type {GeoPath, GeoSphere} from "d3";
+import type {MultiLineString, FeatureCollection, MultiPoint} from "geojson";
+import type {Selection} from "d3-selection";
 
 const render = (
-  event: Selection<never, unknown, null, undefined> | null,
+  event: Selection<HTMLCanvasElement, unknown, null, undefined> | null,
   context: CanvasRenderingContext2D,
   path: GeoPath,
   width: number,
   height: number,
   borders: MultiLineString,
-  land: Feature,
+  land: FeatureCollection,
   mesh: FeatureCollection,
   sphere: GeoSphere,
-  points: Point[],
+  points: number[][],
   colours: string[],
   lat: number,
   lng: number,
@@ -62,7 +61,7 @@ const render = (
   }
 
   context.beginPath();
-  path({type: "MultiPoint", coordinates: points});
+  path({type: "MultiPoint", coordinates: points} as MultiPoint);
   context.fillStyle = "#f00";
   context.fill();
 

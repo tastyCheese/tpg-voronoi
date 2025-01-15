@@ -9,13 +9,13 @@ const drag = (projection: d3.GeoProjection): d3.DragBehavior<Element, unknown, u
   let a0: number;
   let l: number;
 
-  function pointer(event: DragEvent, that: HTMLElement) {
-    const t = d3.pointers(event, that);
+  function pointer(event: DragEvent) {
+    const t = d3.pointers(event, event.target);
 
     if (t.length !== l) {
       l = t.length;
       if (l > 1) a0 = Math.atan2(t[1][1] - t[0][1], t[1][0] - t[0][0]);
-      dragstarted.apply(that, [event]);
+      dragstarted(event);
     }
 
     // For multitouch, average positions and compute rotation.
@@ -41,10 +41,8 @@ const drag = (projection: d3.GeoProjection): d3.DragBehavior<Element, unknown, u
     const v1 = versor.cartesian(a);
     const delta = versor.delta(v0, v1);
     let q1 = versor.multiply(q0, delta);
-
-    const that = this as HTMLElement;
     // For multitouch, compose with a rotation around the axis.
-    const p = pointer(event, that);
+    const p = pointer(event);
     if (p[2]) {
       const d = (p[2] - a0) / 2;
       const s = -Math.sin(d);
@@ -57,7 +55,7 @@ const drag = (projection: d3.GeoProjection): d3.DragBehavior<Element, unknown, u
     projection.rotate(rotation_vector);
 
     // In vicinity of the antipode (unstable) of q0, restart.
-    if (delta[0] < 0.7) dragstarted.apply(that, [event]);
+    if (delta[0] < 0.7) dragstarted(event);
   }
 
   return d3.drag()

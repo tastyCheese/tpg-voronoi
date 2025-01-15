@@ -6,9 +6,12 @@ import { geoVoronoi } from 'd3-geo-voronoi';
 import * as topojson from 'topojson-client';
 import world from '../data/countries.json';
 import Point from "@/classes/point.ts";
+import type {Topology, Objects, GeometryObject} from "topojson-specification";
+import type {FeatureCollection, GeoJsonProperties} from "geojson";
 
 export default {
   data: () => {
+    const topoWorld: Topology<Objects<GeoJsonProperties>> = world as unknown as Topology<Objects<GeoJsonProperties>>;
     const points: Point[] = [];
     const sphere: d3.GeoSphere = { type: 'Sphere' };
     const zoomLevel: number = 0.5;
@@ -16,18 +19,17 @@ export default {
       .fitExtent([[1, 1], [window.innerWidth - 1, window.innerHeight * .9 - 1]], sphere)
       .rotate([0, -30])
       .scale(Math.min(window.innerWidth, window.innerHeight * .9) * zoomLevel);
-    const mesh = geoVoronoi([]).polygons();
-    const found = undefined;
+    const mesh = geoVoronoi([]).polygons() as FeatureCollection;
     return {
       points,
-      land: topojson.feature(world, world.objects.land),
-      borders: topojson.mesh(world, world.objects.countries, (a, b) => a !== b),
+      land: topojson.feature(topoWorld, topoWorld.objects.land) as FeatureCollection,
+      borders: topojson.mesh(topoWorld, topoWorld.objects.countries as GeometryObject, (a, b) => a !== b),
       sphere,
-      path: null,
+      path: undefined as d3.GeoPath | undefined,
       projection,
-      context: null,
+      context: undefined as CanvasRenderingContext2D | undefined,
       mesh,
-      found,
+      found: undefined as number | undefined,
       latitude: 0,
       longitude: 0,
       label: '',
@@ -64,15 +66,18 @@ export default {
   methods: {
     chart () {
       if (this.context !== undefined && this.path !== undefined) {
-        const canvas = this.context.canvas;
+        const canvas = this.context?.canvas;
         return d3.select(canvas)
+          // @ts-expect-error - The Generics in d3 get this messy, selection vs DragEvent gets confused here
           .call(drag(this.projection).on("drag.render", this.dragged))
           .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found)
           .node();
       }
     },
     dragged () {
-      render(null, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found);
+      if (this.context !== undefined && this.path !== undefined) {
+        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found);
+      }
     },
     addPoints () {
       this.points.push(new Point(this.longitude, this.latitude, this.label, this.url));
@@ -80,13 +85,13 @@ export default {
       this.latitude = 0;
       this.label = '';
       this.url = '';
-      this.mesh = geoVoronoi(this.arrayPoints).polygons();
+      this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
       this.save();
     },
     removePoint (index: number) {
       this.points.splice(index, 1);
-      this.mesh = geoVoronoi(this.arrayPoints).polygons();
+      this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
       this.save();
     },
@@ -144,7 +149,7 @@ export default {
           this.points.push(p);
         }
       });
-      this.mesh = geoVoronoi(this.arrayPoints).polygons();
+      this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
       this.save();
     },
@@ -180,7 +185,7 @@ export default {
     }
   },
   mounted () {
-    this.points = JSON.parse(localStorage.getItem('geo_points') ?? '[]').map(p => {
+    this.points = (JSON.parse(localStorage.getItem('geo_points') ?? '[]') as Point[] | number[][]).map(p => {
       if (Array.isArray(p)) {
         return new Point(p[0], p[1], '', '');
       } else {
@@ -190,10 +195,10 @@ export default {
     const currentLocation = JSON.parse(localStorage.getItem('current_location') ?? '{"latitude": 0, "longitude": 0}');
     this.currentLatitude = currentLocation.latitude;
     this.currentLongitude = currentLocation.longitude;
-    this.context = this.$refs.canvas.getContext('2d');
+    this.context = (this.$refs.canvas as HTMLCanvasElement).getContext('2d') ?? undefined;
     this.path = d3.geoPath(this.projection, this.context).pointRadius(1.5);
     if (this.arrayPoints.length > 0) {
-      this.mesh = geoVoronoi(this.arrayPoints).polygons();
+      this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
     }
     this.chart();
