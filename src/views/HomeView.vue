@@ -207,8 +207,8 @@ export default {
           const ongoingRound = data.data.pop();
           if ('ongoing' in ongoingRound && ongoingRound['ongoing']) {
             if ('latitude' in ongoingRound && 'longitude' in ongoingRound) {
-              this.currentLatitude = ongoingRound['latitude']
-              this.currentLongitude = ongoingRound['longitude']
+              this.currentLatitude = ongoingRound['latitude'];
+              this.currentLongitude = ongoingRound['longitude'];
             }
           }
         }
@@ -360,7 +360,7 @@ export default {
       </div>
       <div class="control">
         <datalist id="players-from-tasty">
-          <option v-for="player in playerNames" :value="player"></option>
+          <option v-for="player in playerNames" :key="player" :value="player"></option>
         </datalist>
         <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordUsername">
       </div>
