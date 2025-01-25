@@ -49,7 +49,11 @@ export default {
         'rgba(23, 190, 207',
       ],
       currentLatitude: 0,
-      currentLongitude: 0
+      currentLongitude: 0,
+      selectedX: 0,
+      selectedY: 0,
+      selectedLat: 0,
+      selectedLng: 0
     };
   },
   computed: {
@@ -70,13 +74,14 @@ export default {
         return d3.select(canvas)
           // @ts-expect-error - The Generics in d3 get this messy, selection vs DragEvent gets confused here
           .call(drag(this.projection).on("drag.render", this.dragged))
-          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found)
+          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng)
+          .on('click', this.clicked)
           .node();
       }
     },
     dragged () {
       if (this.context !== undefined && this.path !== undefined) {
-        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found);
+        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng);
       }
     },
     addPoints () {
@@ -100,16 +105,26 @@ export default {
       localStorage.setItem('current_location', JSON.stringify({ latitude: this.currentLatitude, longitude: this.currentLongitude }));
       this.chart();
     },
-    parseCoordinates (event: ClipboardEvent) {
+    parseCoordinates (event: ClipboardEvent, isCurrentLocation: boolean = false) {
+      console.log(event, isCurrentLocation);
       const clipboardData = event.clipboardData;
       if (clipboardData) {
         const pastedData = clipboardData.getData('text/plain');
         if (pastedData.indexOf('.') > -1 && pastedData.indexOf(',') > pastedData.indexOf('.')) {
           const [latitude, longitude] = pastedData.split(',');
-          this.latitude = parseFloat(latitude);
-          this.longitude = parseFloat(longitude);
+          if (isCurrentLocation) {
+            this.currentLatitude = parseFloat(latitude);
+            this.currentLongitude = parseFloat(longitude);
+          } else {
+            this.latitude = parseFloat(latitude);
+            this.longitude = parseFloat(longitude);
+          }
         } else {
-          this.latitude = parseFloat(pastedData);
+          if (isCurrentLocation) {
+            this.currentLatitude = parseFloat(pastedData);
+          } else {
+            this.latitude = parseFloat(pastedData);
+          }
         }
       }
     },
@@ -172,6 +187,12 @@ export default {
       if (this.currentLongitude !== 0 && this.currentLatitude !== 0 && this.found !== undefined && this.found === index) {
         return { backgroundColor: 'rgb(0, 0, 255)' };
       }
+    },
+    clicked (event: MouseEvent) {
+      this.selectedX = event.x;
+      this.selectedY = event.y;
+      // TODO Need to convert this into lng lat somehow.
+      // this.chart();
     }
   },
   watch: {
@@ -222,7 +243,7 @@ export default {
           <button class="button is-small is-static">Current Loc</button>
         </div>
         <div class="control">
-          <input type="number" v-model.number="currentLatitude" placeholder="Latitude" class="input is-small">
+          <input type="number" v-model.number="currentLatitude" placeholder="Latitude" class="input is-small" @paste.prevent="parseCoordinates($event, true)">
         </div>
         <div class="control">
           <input type="number" v-model.number="currentLongitude" placeholder="Longitude" class="input is-small">

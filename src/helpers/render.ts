@@ -16,7 +16,10 @@ const render = (
   colours: string[],
   lat: number,
   lng: number,
-  found: number | undefined): void => {
+  found: number | undefined,
+  selectedLat: number,
+  selectedLng: number
+  ): void => {
   context.clearRect(0, 0, width, height);
 
   context.beginPath();
@@ -69,6 +72,13 @@ const render = (
     context.beginPath();
     path({type: "Point", coordinates: [lng, lat]});
     context.fillStyle = "#000dff";
+    context.fill();
+  }
+
+  if (selectedLng !== 0 && selectedLat !== 0) {
+    context.beginPath();
+    path({type: "Point", coordinates: [selectedLng, selectedLat]});
+    context.fillStyle = "#37ff00";
     context.fill();
   }
 };

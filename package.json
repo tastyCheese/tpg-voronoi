@@ -12,6 +12,7 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@linusborg/vue-ko-fi-button": "^0.1.0",
     "@types/geojson": "^7946.0.15",
     "bulma": "^1.0.3",
     "d3": "^7.9.0",
