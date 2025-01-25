@@ -8,6 +8,7 @@ import world from '../data/countries.json';
 import Point from "@/classes/point.ts";
 import type {Topology, Objects, GeometryObject} from "topojson-specification";
 import type {FeatureCollection, GeoJsonProperties} from "geojson";
+import axios from 'axios';
 
 export default {
   data: () => {
@@ -53,7 +54,8 @@ export default {
       selectedX: 0,
       selectedY: 0,
       selectedLat: 0,
-      selectedLng: 0
+      selectedLng: 0,
+      discordUsername: ''
     };
   },
   computed: {
@@ -193,6 +195,35 @@ export default {
       this.selectedY = event.y;
       // TODO Need to convert this into lng lat somehow.
       // this.chart();
+    },
+    async importFromTasty () {
+      // https://tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=scottytremaine
+      if (!this.discordUsername) {
+        return;
+      }
+      try {
+        const data = await axios.get(`https://tpg.tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=${this.discordUsername}`);
+        console.log(data);
+        if (data && data.data) {
+          const points = data.data as Point[];
+          points.forEach(p => {
+            const index = this.points.findIndex(point => point.latitude.toFixed(5) === p.latitude.toFixed(5) && point.longitude.toFixed(5) === p.longitude.toFixed(5));
+            if (index > -1) {
+              // this.points[index] = p; Do not overwrite
+            } else {
+              this.points.push(p);
+            }
+          });
+          this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
+          this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+          this.save();
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          console.log(e.message);
+        }
+        return;
+      }
     }
   },
   watch: {
@@ -229,7 +260,7 @@ export default {
 
 <template>
   <main>
-    <div ref="container" class="main-container" @wheel="wheelZoom($event)">
+    <div ref="container" class="main-container" style="margin-top: 40px;">
       <div class="field has-addons" style="position: absolute; top: 5%; left: 5%">
         <div class="control">
           <button class="button" @click="zoom('in')">+</button>
@@ -238,18 +269,25 @@ export default {
           <button class="button" @click="zoom('out')">-</button>
         </div>
       </div>
-      <div class="field has-addons" style="position: absolute; top: 5%; right: 5%">
-        <div class="control">
-          <button class="button is-small is-static">Current Loc</button>
+      <div style="position: absolute; top: 5%; right: 5%; display: flex; flex-direction: column; align-items: flex-end">
+        <div class="field has-addons">
+          <div class="control">
+            <button class="button is-small is-static">Current Loc</button>
+          </div>
+          <div class="control">
+            <input type="number" v-model.number="currentLatitude" placeholder="Latitude" class="input is-small" @paste.prevent="parseCoordinates($event, true)">
+          </div>
+          <div class="control">
+            <input type="number" v-model.number="currentLongitude" placeholder="Longitude" class="input is-small">
+          </div>
         </div>
-        <div class="control">
-          <input type="number" v-model.number="currentLatitude" placeholder="Latitude" class="input is-small" @paste.prevent="parseCoordinates($event, true)">
-        </div>
-        <div class="control">
-          <input type="number" v-model.number="currentLongitude" placeholder="Longitude" class="input is-small">
+        <div v-if="!currentLatitude || !currentLongitude" class="message is-danger">
+          <div class="message-body">
+            <p><small>Add current TPG location to highlight the closest photo.</small></p>
+          </div>
         </div>
       </div>
-      <canvas ref="canvas" :height="height" :width="width"></canvas>
+      <canvas ref="canvas" :height="height" :width="width" @wheel="wheelZoom($event)"></canvas>
     </div>
     <div class="message is-primary">
       <div class="message-body">
@@ -271,6 +309,17 @@ export default {
       </div>
       <div class="control">
         <button class="button is-small is-primary" @click="downloadCsv()">Export CSV</button>
+      </div>
+    </div>
+    <div class="field has-addons">
+      <div class="control">
+        <button class="button is-small is-static">Import Previously Submitted</button>
+      </div>
+      <div class="control">
+        <input class="input is-small" type="text" placeholder="Discord Username" v-model="discordUsername">
+      </div>
+      <div class="control">
+        <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
       </div>
     </div>
     <div class="table-container">
