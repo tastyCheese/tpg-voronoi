@@ -197,6 +197,28 @@ export default {
       // TODO Need to convert this into lng lat somehow.
       // this.chart();
     },
+    async getRoundFromTasty() {
+      // https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds
+      try {
+        const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds');
+        console.log(data);
+
+        if (data && data.data && data.data.length > 0) {
+          const ongoingRound = data.data.pop();
+          if ('ongoing' in ongoingRound && ongoingRound['ongoing']) {
+            if ('latitude' in ongoingRound && 'longitude' in ongoingRound) {
+              this.currentLatitude = ongoingRound['latitude']
+              this.currentLongitude = ongoingRound['longitude']
+            }
+          }
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          console.log(e.message);
+        }
+        return;
+      }
+    },
     async getPlayersFromTasty() {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers
       try {
@@ -297,6 +319,9 @@ export default {
           </div>
           <div class="control">
             <input type="number" v-model.number="currentLongitude" placeholder="Longitude" class="input is-small">
+          </div>
+          <div class="control">
+            <button class="button is-small is-info" @click="getRoundFromTasty">Load ongoing round</button>
           </div>
         </div>
         <div v-if="!currentLatitude || !currentLongitude" class="message is-danger">
