@@ -196,6 +196,33 @@ export default {
       // TODO Need to convert this into lng lat somehow.
       // this.chart();
     },
+    async getPlayersFromTasty(datalistId: string) {
+      // https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers
+      try {
+        const datalist = document.getElementById(datalistId);
+        if (!datalist) {
+          return;
+        }
+        datalist.innerHTML = '';
+
+        const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers');
+        console.log(data);
+
+        if (data && data.data) {
+          const names = data.data as string[];
+          names.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            datalist.appendChild(option);
+          });
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          console.log(e.message);
+        }
+        return;
+      }
+    },
     async importFromTasty () {
       // https://tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=scottytremaine
       if (!this.discordUsername) {
@@ -316,7 +343,10 @@ export default {
         <button class="button is-small is-static">Import Previously Submitted</button>
       </div>
       <div class="control">
-        <input class="input is-small" type="text" placeholder="Discord Username" v-model="discordUsername">
+        <datalist id="players-from-tasty">
+          <option value="Loading..."></option>
+        </datalist>
+        <input class="input is-small" type="text" placeholder="Discord Username" v-model="discordUsername" list="players-from-tasty" @click.once="getPlayersFromTasty('players-from-tasty')">
       </div>
       <div class="control">
         <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
