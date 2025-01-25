@@ -55,6 +55,7 @@ export default {
       selectedY: 0,
       selectedLat: 0,
       selectedLng: 0,
+      playerNames: [],
       discordUsername: ''
     };
   },
@@ -196,25 +197,14 @@ export default {
       // TODO Need to convert this into lng lat somehow.
       // this.chart();
     },
-    async getPlayersFromTasty(datalistId: string) {
+    async getPlayersFromTasty() {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers
       try {
-        const datalist = document.getElementById(datalistId);
-        if (!datalist) {
-          return;
-        }
-        datalist.innerHTML = '';
-
         const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers');
         console.log(data);
 
         if (data && data.data) {
-          const names = data.data as string[];
-          names.forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            datalist.appendChild(option);
-          });
+          this.playerNames = data.data;
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -281,6 +271,7 @@ export default {
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
     }
     this.chart();
+    this.getPlayersFromTasty();
   }
 };
 </script>
@@ -344,9 +335,9 @@ export default {
       </div>
       <div class="control">
         <datalist id="players-from-tasty">
-          <option value="Loading..."></option>
+          <option v-for="player in playerNames" :value="player"></option>
         </datalist>
-        <input class="input is-small" type="text" placeholder="Discord Username" v-model="discordUsername" list="players-from-tasty" @click.once="getPlayersFromTasty('players-from-tasty')">
+        <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordUsername">
       </div>
       <div class="control">
         <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
