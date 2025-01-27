@@ -55,6 +55,7 @@ export default {
       selectedY: 0,
       selectedLat: 0,
       selectedLng: 0,
+      playerNames: [],
       discordUsername: ''
     };
   },
@@ -196,6 +197,44 @@ export default {
       // TODO Need to convert this into lng lat somehow.
       // this.chart();
     },
+    async getRoundFromTasty() {
+      // https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds
+      try {
+        const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds');
+        console.log(data);
+
+        if (data && data.data && data.data.length > 0) {
+          const ongoingRound = data.data.pop();
+          if ('ongoing' in ongoingRound && ongoingRound['ongoing']) {
+            if ('latitude' in ongoingRound && 'longitude' in ongoingRound) {
+              this.currentLatitude = ongoingRound['latitude'];
+              this.currentLongitude = ongoingRound['longitude'];
+            }
+          }
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          console.log(e.message);
+        }
+        return;
+      }
+    },
+    async getPlayersFromTasty() {
+      // https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers
+      try {
+        const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers');
+        console.log(data);
+
+        if (data && data.data) {
+          this.playerNames = data.data;
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          console.log(e.message);
+        }
+        return;
+      }
+    },
     async importFromTasty () {
       // https://tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=scottytremaine
       if (!this.discordUsername) {
@@ -254,6 +293,7 @@ export default {
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
     }
     this.chart();
+    this.getPlayersFromTasty();
   }
 };
 </script>
@@ -279,6 +319,9 @@ export default {
           </div>
           <div class="control">
             <input type="number" v-model.number="currentLongitude" placeholder="Longitude" class="input is-small">
+          </div>
+          <div class="control">
+            <button class="button is-small is-info" @click="getRoundFromTasty">Load ongoing round</button>
           </div>
         </div>
         <div v-if="!currentLatitude || !currentLongitude" class="message is-danger">
@@ -316,7 +359,10 @@ export default {
         <button class="button is-small is-static">Import Previously Submitted</button>
       </div>
       <div class="control">
-        <input class="input is-small" type="text" placeholder="Discord Username" v-model="discordUsername">
+        <datalist id="players-from-tasty">
+          <option v-for="player in playerNames" :key="player" :value="player"></option>
+        </datalist>
+        <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordUsername">
       </div>
       <div class="control">
         <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
