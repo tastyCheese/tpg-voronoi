@@ -205,10 +205,10 @@ export default {
 
         if (data && data.data && data.data.length > 0) {
           const ongoingRound = data.data.pop();
-          if ('ongoing' in ongoingRound && ongoingRound['ongoing']) {
-            if ('latitude' in ongoingRound && 'longitude' in ongoingRound) {
-              this.currentLatitude = ongoingRound['latitude'];
-              this.currentLongitude = ongoingRound['longitude'];
+          if (ongoingRound.ongoing) {
+            if (ongoingRound.latitude && ongoingRound.longitude) {
+              this.currentLatitude = ongoingRound.latitude;
+              this.currentLongitude = ongoingRound.longitude;
             }
           }
         }
