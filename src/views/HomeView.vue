@@ -57,7 +57,8 @@ export default {
       selectedLat: 0,
       selectedLng: 0,
       playerNames: [],
-      discordUsername: ''
+      discordUsername: '',
+      editIndex: -1
     };
   },
   computed: {
@@ -404,12 +405,26 @@ export default {
         </tr>
           <tr v-for="(point, index) in points" :key="index" :style="highlightLine(index)">
             <td :style="backgroundColour(index)">&nbsp;</td>
-            <td>{{ point.latitude }}</td>
-            <td>{{ point.longitude }}</td>
+            <td v-if="editIndex === index"><input type="number" class="input is-small" v-model.number="point.latitude"></td>
+            <td v-else>{{ point.latitude }}</td>
+            <td v-if="editIndex === index"><input type="number" class="input is-small" v-model.number="point.longitude"></td>
+            <td v-else>{{ point.longitude }}</td>
             <td><button class="button is-small is-primary has-text-white" @click="copy(point)"><font-awesome-icon icon="fa-solid fa-copy" /></button></td>
-            <td><input type="text" class="input is-small" placeholder="Label" v-model="point.label" @blur="save"></td>
-            <td><img v-if="point.url" :src="point.url" class="thumbnail" :alt="point.label"><input v-else type="text" class="input is-small" placeholder="URL" v-model="point.url" @blur="save"></td>
-            <td><button class="button is-small is-danger" @click="removePoint(index)">X</button></td>
+            <td v-if="editIndex === index"><input type="text" class="input is-small" placeholder="Label" v-model="point.label"></td>
+            <td v-else>{{ point.label }}</td>
+            <td v-if="editIndex === index"><input type="text" class="input is-small" placeholder="URL" v-model="point.url"></td>
+            <td v-else><img v-if="point.url" :src="point.url" class="thumbnail" :alt="point.label"></td>
+            <td>
+              <div class="field has-addons">
+                <div class="control">
+                  <button class="button is-small is-success" v-if="editIndex === index" @click="save(); editIndex = -1"><font-awesome-icon icon="fa-solid fa-save"></font-awesome-icon></button>
+                  <button class="button is-small is-info" v-else @click="save(); editIndex = index"><font-awesome-icon icon="fa-solid fa-pencil"></font-awesome-icon></button>
+                </div>
+                <div class="control">
+                  <button class="button is-small is-danger" @click="removePoint(index)"><font-awesome-icon icon="fa-solid fa-times"></font-awesome-icon></button>
+                </div>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>

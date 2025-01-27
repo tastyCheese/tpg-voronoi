@@ -8,10 +8,13 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 /* import specific icons */
-import { faCopy } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faPencil, faTimes, faSave } from '@fortawesome/free-solid-svg-icons';
 
 /* add icons to the library */
 library.add(faCopy);
+library.add(faPencil);
+library.add(faTimes);
+library.add(faSave);
 
 
 const app = createApp(App);
