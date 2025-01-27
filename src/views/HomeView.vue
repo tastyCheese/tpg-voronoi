@@ -9,6 +9,7 @@ import Point from "@/classes/point.ts";
 import type {Topology, Objects, GeometryObject} from "topojson-specification";
 import type {FeatureCollection, GeoJsonProperties} from "geojson";
 import axios from 'axios';
+import useClipboard from 'vue-clipboard3';
 
 export default {
   data: () => {
@@ -263,14 +264,24 @@ export default {
         }
         return;
       }
+    },
+    async copy (point: Point) {
+      const { toClipboard } = useClipboard();
+      await toClipboard(`${point.latitude}, ${point.longitude}`);
     }
   },
   watch: {
     currentLatitude () {
+      if (this.arrayPoints.length === 0 || !this.currentLongitude || !this.currentLatitude) {
+        return;
+      }
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
       this.save();
     },
     currentLongitude () {
+      if (this.arrayPoints.length === 0 || !this.currentLongitude || !this.currentLatitude) {
+        return;
+      }
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
       this.save();
     }
@@ -375,6 +386,7 @@ export default {
             <td></td>
             <th>Latitude</th>
             <th>Longitude</th>
+            <th></th>
             <th>Label</th>
             <th>Image</th>
             <th></th>
@@ -385,6 +397,7 @@ export default {
           <td></td>
           <td><input type="number" class="input is-small" v-model.number="latitude" @paste.prevent="parseCoordinates"></td>
           <td><input type="number" class="input is-small" v-model.number="longitude"></td>
+          <td></td>
           <td><input type="text" class="input is-small" placeholder="Label" v-model="label"></td>
           <td><input type="text" class="input is-small" placeholder="URL" v-model="url"></td>
           <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
@@ -393,8 +406,9 @@ export default {
             <td :style="backgroundColour(index)">&nbsp;</td>
             <td>{{ point.latitude }}</td>
             <td>{{ point.longitude }}</td>
+            <td><button class="button is-small is-primary has-text-white" @click="copy(point)"><font-awesome-icon icon="fa-solid fa-copy" /></button></td>
             <td><input type="text" class="input is-small" placeholder="Label" v-model="point.label" @blur="save"></td>
-            <td><img v-if="point.url" :src="point.url" class="thumbnail"><input v-else type="text" class="input is-small" placeholder="URL" v-model="point.url" @blur="save"></td>
+            <td><img v-if="point.url" :src="point.url" class="thumbnail" :alt="point.label"><input v-else type="text" class="input is-small" placeholder="URL" v-model="point.url" @blur="save"></td>
             <td><button class="button is-small is-danger" @click="removePoint(index)">X</button></td>
           </tr>
         </tbody>

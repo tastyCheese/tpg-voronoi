@@ -12,6 +12,9 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/vue-fontawesome": "^3.0.8",
     "@linusborg/vue-ko-fi-button": "^0.1.0",
     "@types/geojson": "^7946.0.15",
     "axios": "^1.7.9",
@@ -23,6 +26,7 @@
     "topojson-client": "^3.1.0",
     "versor": "^0.2.0",
     "vue": "^3.5.13",
+    "vue-clipboard3": "^2.0.0",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
