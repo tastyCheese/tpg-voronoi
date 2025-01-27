@@ -406,12 +406,12 @@ export default {
           <tr v-for="(point, index) in points" :key="index" :style="highlightLine(index)">
             <td :style="backgroundColour(index)">&nbsp;</td>
             <td v-if="editIndex === index"><input type="number" class="input is-small" v-model.number="point.latitude"></td>
-            <td v-else>{{ point.latitude }}</td>
+            <td v-else :class="{'has-text-white': highlightLine(index)}">{{ point.latitude }}</td>
             <td v-if="editIndex === index"><input type="number" class="input is-small" v-model.number="point.longitude"></td>
-            <td v-else>{{ point.longitude }}</td>
+            <td v-else :class="{'has-text-white': highlightLine(index)}">{{ point.longitude }}</td>
             <td><button class="button is-small is-primary has-text-white" @click="copy(point)"><font-awesome-icon icon="fa-solid fa-copy" /></button></td>
             <td v-if="editIndex === index"><input type="text" class="input is-small" placeholder="Label" v-model="point.label"></td>
-            <td v-else>{{ point.label }}</td>
+            <td v-else :class="{'has-text-white': highlightLine(index)}">{{ point.label }}</td>
             <td v-if="editIndex === index"><input type="text" class="input is-small" placeholder="URL" v-model="point.url"></td>
             <td v-else><img v-if="point.url" :src="point.url" class="thumbnail" :alt="point.label"></td>
             <td>
