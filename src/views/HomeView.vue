@@ -70,6 +70,25 @@ export default {
     },
     width () {
       return window.innerWidth;
+    },
+    meshColours (): string[] {
+      if (this.mesh && this.mesh.features.length > 0) {
+        const colours: string[] = [];
+        for (const poly of this.mesh.features) {
+          if (poly.properties && poly.properties.neighbours) {
+            const notAllowedColours = poly.properties.neighbours.map((n: number) => {
+              if (colours[n]) {
+                return colours[n];
+              } else {
+                return false;
+              }
+            });
+            colours.push(this.colours.find(a => notAllowedColours.indexOf(a) === -1) ?? 'rgba(255, 255, 255)');
+          }
+        }
+        return colours;
+      }
+      return this.colours;
     }
   },
   methods: {
@@ -79,14 +98,14 @@ export default {
         return d3.select(canvas)
           // @ts-expect-error - The Generics in d3 get this messy, selection vs DragEvent gets confused here
           .call(drag(this.projection).on("drag.render", this.dragged))
-          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng)
+          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng)
           .on('click', this.clicked)
           .node();
       }
     },
     dragged () {
       if (this.context !== undefined && this.path !== undefined) {
-        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.colours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng);
+        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng);
       }
     },
     addPoints () {
@@ -185,8 +204,7 @@ export default {
       }
     },
     backgroundColour (index: number) {
-      const mod = index % this.colours.length;
-      return { backgroundColor: this.colours[mod] };
+      return { backgroundColor: this.meshColours[index] };
     },
     highlightLine (index: number) {
       if (this.currentLongitude !== 0 && this.currentLatitude !== 0 && this.found !== undefined && this.found === index) {
