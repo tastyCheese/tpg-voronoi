@@ -1,6 +1,7 @@
 import type {GeoPath, GeoSphere} from "d3";
 import type {MultiLineString, FeatureCollection, MultiPoint} from "geojson";
 import type {Selection} from "d3-selection";
+import Point from "@/classes/point.ts";
 
 const render = (
   event: Selection<HTMLCanvasElement, unknown, null, undefined> | null,
@@ -70,6 +71,20 @@ const render = (
   context.fillStyle = "#f00";
   context.fill();
 
+  if (lng !== 0 && lat !== 0) {
+    context.beginPath();
+    path({type: "Point", coordinates: [lng, lat]});
+    context.fillStyle = "#000dff";
+    context.fill();
+  }
+
+  if (selectedLng !== 0 && selectedLat !== 0) {
+    context.beginPath();
+    path({type: "Point", coordinates: [selectedLng, selectedLat]});
+    context.fillStyle = "#37ff00";
+    context.fill();
+  }
+
   if (mouseX && mouseY) {
     const hoverRadius = 4;
     let closestPoint = null;
@@ -86,9 +101,26 @@ const render = (
         };
       }
     });
+    context.fillStyle = "#f00";
+
+
+    if (lng !== 0 && lat !== 0) {
+      const renderedRound = path.centroid({type: "Point", coordinates: [lng, lat]});
+      console.log()
+      const roundDistance = Math.sqrt(Math.pow(renderedRound[0] - mouseX, 2) + Math.pow(renderedRound[1] - mouseY, 2));
+      if (roundDistance < closestDistance) {
+        closestPoint = new Point(lng, lat, 'Current round');
+        closestRendered = {
+          x: renderedRound[0],
+          y: renderedRound[1]
+        };
+        context.fillStyle = "#000dff";
+      }
+    }
     if (closestPoint && closestRendered) {
       const oldRadius = path.pointRadius();
       path.pointRadius(hoverRadius);
+
       context.beginPath();
       path({type: "Point", coordinates: [closestPoint.longitude, closestPoint.latitude]});
       context.fill();
@@ -105,20 +137,6 @@ const render = (
 
       path.pointRadius(oldRadius);
     }
-  }
-
-  if (lng !== 0 && lat !== 0) {
-    context.beginPath();
-    path({type: "Point", coordinates: [lng, lat]});
-    context.fillStyle = "#000dff";
-    context.fill();
-  }
-
-  if (selectedLng !== 0 && selectedLat !== 0) {
-    context.beginPath();
-    path({type: "Point", coordinates: [selectedLng, selectedLat]});
-    context.fillStyle = "#37ff00";
-    context.fill();
   }
 };
 
