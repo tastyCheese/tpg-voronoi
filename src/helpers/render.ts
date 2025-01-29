@@ -106,7 +106,6 @@ const render = (
 
     if (lng !== 0 && lat !== 0) {
       const renderedRound = path.centroid({type: "Point", coordinates: [lng, lat]});
-      console.log()
       const roundDistance = Math.sqrt(Math.pow(renderedRound[0] - mouseX, 2) + Math.pow(renderedRound[1] - mouseY, 2));
       if (roundDistance < closestDistance) {
         closestPoint = new Point(lng, lat, 'Current round');
