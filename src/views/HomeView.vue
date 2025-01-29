@@ -2,6 +2,7 @@
 import * as d3 from 'd3';
 import drag from '../helpers/drag.js';
 import render from '../helpers/render.js';
+import canvasMousePos from '../helpers/canvasMousePos.ts';
 import { geoVoronoi } from 'd3-geo-voronoi';
 import * as topojson from 'topojson-client';
 import world from '../data/countries.json';
@@ -52,6 +53,8 @@ export default {
       ],
       currentLatitude: 0,
       currentLongitude: 0,
+      mouseX: 0,
+      mouseY: 0,
       selectedX: 0,
       selectedY: 0,
       selectedLat: 0,
@@ -98,14 +101,15 @@ export default {
         return d3.select(canvas)
           // @ts-expect-error - The Generics in d3 get this messy, selection vs DragEvent gets confused here
           .call(drag(this.projection).on("drag.render", this.dragged))
-          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng)
+          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.points, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.mouseX, this.mouseY, this.selectedLat, this.selectedLng)
           .on('click', this.clicked)
+          .on('mousemove', this.mouseMoved)
           .node();
       }
     },
     dragged () {
       if (this.context !== undefined && this.path !== undefined) {
-        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.arrayPoints, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.selectedLat, this.selectedLng);
+        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.points, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.mouseX, this.mouseY, this.selectedLat, this.selectedLng);
       }
     },
     addPoints () {
@@ -209,6 +213,14 @@ export default {
     highlightLine (index: number) {
       if (this.currentLongitude !== 0 && this.currentLatitude !== 0 && this.found !== undefined && this.found === index) {
         return { backgroundColor: 'rgb(0, 0, 255)' };
+      }
+    },
+    mouseMoved (event: MouseEvent) {
+      if (this.context !== undefined) {
+        const mousePos = canvasMousePos(this.context?.canvas, event.x, event.y);
+        this.mouseX = mousePos.x;
+        this.mouseY = mousePos.y;
+        this.chart();
       }
     },
     clicked (event: MouseEvent) {

@@ -12,11 +12,13 @@ const render = (
   land: FeatureCollection,
   mesh: FeatureCollection,
   sphere: GeoSphere,
-  points: number[][],
+  points: Point[],
   colours: string[],
   lat: number,
   lng: number,
   found: number | undefined,
+  mouseX: number,
+  mouseY: number,
   selectedLat: number,
   selectedLng: number
   ): void => {
@@ -64,9 +66,46 @@ const render = (
   }
 
   context.beginPath();
-  path({type: "MultiPoint", coordinates: points} as MultiPoint);
+  path({type: "MultiPoint", coordinates: points.map((point) => [point.longitude, point.latitude])} as MultiPoint);
   context.fillStyle = "#f00";
   context.fill();
+
+  if (mouseX && mouseY) {
+    const hoverRadius = 4;
+    let closestPoint = null;
+    let closestRendered = null;
+    const closestDistance = hoverRadius;
+    points.forEach(point => {
+      const renderedPoint = path.centroid({type: "Point", coordinates: [point.longitude, point.latitude]});
+      const distance = Math.sqrt(Math.pow(renderedPoint[0] - mouseX, 2) + Math.pow(renderedPoint[1] - mouseY, 2));
+      if (distance < closestDistance) {
+        closestPoint = point;
+        closestRendered = {
+          x: renderedPoint[0],
+          y: renderedPoint[1]
+        };
+      }
+    });
+    if (closestPoint && closestRendered) {
+      const oldRadius = path.pointRadius();
+      path.pointRadius(hoverRadius);
+      context.beginPath();
+      path({type: "Point", coordinates: [closestPoint.longitude, closestPoint.latitude]});
+      context.fill();
+
+      // Tooltip
+      // context.fillStyle = "#fff";
+      // context.fillRect(closestRendered.x - width / 2, closestRendered.y - height - 10, width, height)
+      // context.strokeStyle = "#000";
+      // context.strokeRect(closestRendered.x - width / 2, closestRendered.y - height - 10, width, height)
+      context.fillStyle = "#fff";
+      context.font = "bold 14px sans";
+      context.textAlign = "center";
+      context.fillText(closestPoint.label, closestRendered.x, closestRendered.y - 15);
+
+      path.pointRadius(oldRadius);
+    }
+  }
 
   if (lng !== 0 && lat !== 0) {
     context.beginPath();
