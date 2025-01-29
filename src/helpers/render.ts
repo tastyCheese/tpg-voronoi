@@ -125,10 +125,6 @@ const render = (
       context.fill();
 
       // Tooltip
-      // context.fillStyle = "#fff";
-      // context.fillRect(closestRendered.x - width / 2, closestRendered.y - height - 10, width, height)
-      // context.strokeStyle = "#000";
-      // context.strokeRect(closestRendered.x - width / 2, closestRendered.y - height - 10, width, height)
       context.fillStyle = "#fff";
       context.font = "bold 14px sans";
       context.textAlign = "center";
