@@ -12,6 +12,7 @@ import type {FeatureCollection, GeoJsonProperties} from "geojson";
 import axios from 'axios';
 import useClipboard from 'vue-clipboard3';
 import haversine from "@/helpers/haversine.ts";
+import area from "@turf/area";
 
 export default {
   data: () => {
@@ -327,6 +328,15 @@ export default {
         }
       }
       return '';
+    },
+    area (index: number) {
+      const meshItem = this.mesh.features[index];
+      const result = area(meshItem);
+      if (result > 1000000) {
+        return (result / 1000000).toFixed(2) + 'sq. km';
+      } else {
+        return result + 'sq. m';
+      }
     }
   },
   watch: {
@@ -449,6 +459,7 @@ export default {
             <th>Image</th>
             <th>Distance</th>
             <th>Antipode Dist.</th>
+            <th>Area</th>
             <th></th>
           </tr>
         </thead>
@@ -477,6 +488,7 @@ export default {
             <td v-else><img v-if="point.url" :src="point.url" class="thumbnail" :alt="point.label"></td>
             <td :class="{'has-text-white': highlightLine(index)}">{{ distance(point) }}</td>
             <td :class="{'has-text-white': highlightLine(index)}">{{ antipodeDistance(point) }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ area(index) }}</td>
             <td>
               <div class="field has-addons">
                 <div class="control">
