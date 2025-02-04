@@ -11,6 +11,7 @@ import type {Topology, Objects, GeometryObject} from "topojson-specification";
 import type {FeatureCollection, GeoJsonProperties} from "geojson";
 import axios from 'axios';
 import useClipboard from 'vue-clipboard3';
+import haversine from "@/helpers/haversine.ts";
 
 export default {
   data: () => {
@@ -300,6 +301,32 @@ export default {
     async copy (point: Point) {
       const { toClipboard } = useClipboard();
       await toClipboard(`${point.latitude}, ${point.longitude}`);
+    },
+    distance (point: Point) {
+      if (this.currentLongitude !== 0 && this.currentLatitude !== 0) {
+        const distance = haversine(this.currentLatitude, this.currentLongitude, point.latitude, point.longitude);
+        if (distance > 10000) {
+          return (distance / 1000).toFixed(2) + 'km';
+        } else if (distance > 2000) {
+          return (distance / 1000).toFixed(3) + 'km';
+        } else {
+          return distance + 'm';
+        }
+      }
+      return '';
+    },
+    antipodeDistance (point: Point) {
+      if (this.currentLongitude !== 0 && this.currentLatitude !== 0) {
+        const distance = haversine(-this.currentLatitude, this.currentLongitude + 180 > 180 ? this.currentLongitude - 180 : this.currentLongitude + 180, point.latitude, point.longitude);
+        if (distance > 10000) {
+          return (distance / 1000).toFixed(2) + 'km';
+        } else if (distance > 2000) {
+          return (distance / 1000).toFixed(3) + 'km';
+        } else {
+          return distance + 'm';
+        }
+      }
+      return '';
     }
   },
   watch: {
@@ -420,6 +447,8 @@ export default {
             <th></th>
             <th>Label</th>
             <th>Image</th>
+            <th>Distance</th>
+            <th>Antipode Dist.</th>
             <th></th>
           </tr>
         </thead>
@@ -431,6 +460,8 @@ export default {
           <td></td>
           <td><input type="text" class="input is-small" placeholder="Label" v-model="label"></td>
           <td><input type="text" class="input is-small" placeholder="URL" v-model="url"></td>
+          <td></td>
+          <td></td>
           <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
         </tr>
           <tr v-for="(point, index) in points" :key="index" :style="highlightLine(index)">
@@ -444,6 +475,8 @@ export default {
             <td v-else :class="{'has-text-white': highlightLine(index)}">{{ point.label }}</td>
             <td v-if="editIndex === index"><input type="text" class="input is-small" placeholder="URL" v-model="point.url"></td>
             <td v-else><img v-if="point.url" :src="point.url" class="thumbnail" :alt="point.label"></td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ distance(point) }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ antipodeDistance(point) }}</td>
             <td>
               <div class="field has-addons">
                 <div class="control">
