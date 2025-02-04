@@ -33,6 +33,7 @@ export default {
       context: undefined as CanvasRenderingContext2D | undefined,
       mesh,
       found: undefined as number | undefined,
+      antipodeFound: undefined as number | undefined,
       latitude: 0,
       longitude: 0,
       label: '',
@@ -101,7 +102,7 @@ export default {
         return d3.select(canvas)
           // @ts-expect-error - The Generics in d3 get this messy, selection vs DragEvent gets confused here
           .call(drag(this.projection).on("drag.render", this.dragged))
-          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.points, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.mouseX, this.mouseY, this.selectedLat, this.selectedLng)
+          .call(render, this.context, this.path, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.points, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.antipodeFound, this.mouseX, this.mouseY)
           .on('click', this.clicked)
           .on('mousemove', this.mouseMoved)
           .node();
@@ -109,7 +110,7 @@ export default {
     },
     dragged () {
       if (this.context !== undefined && this.path !== undefined) {
-        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.points, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.mouseX, this.mouseY, this.selectedLat, this.selectedLng);
+        render(null, this.context!, this.path!, this.width, this.height, this.borders, this.land, this.mesh, this.sphere, this.points, this.meshColours, this.currentLatitude, this.currentLongitude, this.found, this.antipodeFound, this.mouseX, this.mouseY);
       }
     },
     addPoints () {
@@ -118,14 +119,16 @@ export default {
       this.latitude = 0;
       this.label = '';
       this.url = '';
-      this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
-      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
-      this.save();
+      this.update();
     },
     removePoint (index: number) {
       this.points.splice(index, 1);
+      this.save();
+    },
+    update () {
       this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+      this.antipodeFound = geoVoronoi(this.arrayPoints).find(this.currentLongitude + 180 > 180 ? this.currentLongitude - 180 : this.currentLongitude + 180, -this.currentLatitude);
       this.save();
     },
     save () {
@@ -192,9 +195,7 @@ export default {
           this.points.push(p);
         }
       });
-      this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
-      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
-      this.save();
+      this.update();
     },
     zoom (direction: 'in' | 'out', scale: number = 1.5) {
       this.zoomLevel = direction === 'in' ? Math.min(this.zoomLevel * scale, 15) : Math.max(this.zoomLevel / scale, 0.5);
@@ -213,6 +214,8 @@ export default {
     highlightLine (index: number) {
       if (this.currentLongitude !== 0 && this.currentLatitude !== 0 && this.found !== undefined && this.found === index) {
         return { backgroundColor: 'rgb(0, 0, 255)' };
+      } else if (this.currentLongitude !== 0 && this.currentLatitude !== 0 && this.antipodeFound !== undefined && this.antipodeFound === index) {
+        return { backgroundColor: 'rgb(140, 0, 255)' };
       }
     },
     mouseMoved (event: MouseEvent) {
@@ -285,9 +288,7 @@ export default {
               this.points.push(p);
             }
           });
-          this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
-          this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
-          this.save();
+          this.update();
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -306,15 +307,13 @@ export default {
       if (this.arrayPoints.length === 0 || !this.currentLongitude || !this.currentLatitude) {
         return;
       }
-      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
-      this.save();
+      this.update();
     },
     currentLongitude () {
       if (this.arrayPoints.length === 0 || !this.currentLongitude || !this.currentLatitude) {
         return;
       }
-      this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
-      this.save();
+      this.update();
     }
   },
   mounted () {
@@ -333,6 +332,7 @@ export default {
     if (this.arrayPoints.length > 0) {
       this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
+      this.antipodeFound = geoVoronoi(this.arrayPoints).find(this.currentLongitude + 180 > 180 ? this.currentLongitude - 180 : this.currentLongitude + 180, -this.currentLatitude);
     }
     this.chart();
     this.getPlayersFromTasty();

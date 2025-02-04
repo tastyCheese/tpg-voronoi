@@ -18,10 +18,9 @@ const render = (
   lat: number,
   lng: number,
   found: number | undefined,
+  antipodeFound: number | undefined,
   mouseX: number,
-  mouseY: number,
-  selectedLat: number,
-  selectedLng: number
+  mouseY: number
   ): void => {
   context.clearRect(0, 0, width, height);
 
@@ -57,6 +56,12 @@ const render = (
       context.stroke();
       context.fillStyle = 'rgba(0,0,255,0.5)';
       context.fill();
+    } else if (lng !== 0 && lat !== 0 && antipodeFound !== undefined && antipodeFound === i) {
+      context.strokeStyle = "#8c00ff";
+      context.lineWidth = 3;
+      context.stroke();
+      context.fillStyle = 'rgba(140,0,255,0.5)';
+      context.fill();
     } else {
       context.strokeStyle = colours[mod] + ')';
       context.stroke();
@@ -78,10 +83,10 @@ const render = (
     context.fill();
   }
 
-  if (selectedLng !== 0 && selectedLat !== 0) {
+  if (lng !== 0 && lat !== 0) {
     context.beginPath();
-    path({type: "Point", coordinates: [selectedLng, selectedLat]});
-    context.fillStyle = "#37ff00";
+    path({type: "Point", coordinates: [lng + 180 > 180 ? lng - 180 : lng + 180, -lat]});
+    context.fillStyle = "#8c00ff";
     context.fill();
   }
 
@@ -114,6 +119,17 @@ const render = (
           y: renderedRound[1]
         };
         context.fillStyle = "#000dff";
+      } else {
+        const renderedAntipode = path.centroid({type: "Point", coordinates: [lng + 180 > 180 ? lng - 180 : lng + 180, -lat]});
+        const antipodeDistance = Math.sqrt(Math.pow(renderedAntipode[0] - mouseX, 2) + Math.pow(renderedAntipode[1] - mouseY, 2));
+        if (antipodeDistance < closestDistance) {
+          closestPoint = new Point(lng + 180 > 180 ? lng - 180 : lng + 180, -lat, 'Current round antipode', '');
+          closestRendered = {
+            x: renderedAntipode[0],
+            y: renderedAntipode[1]
+          };
+          context.fillStyle = "#8c00ff";
+        }
       }
     }
     if (closestPoint && closestRendered) {
