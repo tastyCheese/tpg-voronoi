@@ -8,11 +8,11 @@ import * as topojson from 'topojson-client';
 import world from '../data/countries.json';
 import Point from "@/classes/point.ts";
 import type {Topology, Objects, GeometryObject} from "topojson-specification";
-import type {FeatureCollection, GeoJsonProperties} from "geojson";
+import type {FeatureCollection, GeoJsonProperties, Polygon} from "geojson";
 import axios from 'axios';
 import useClipboard from 'vue-clipboard3';
 import haversine from "@/helpers/haversine.ts";
-import area from "@turf/area";
+import { dot, cross } from 'mathjs';
 
 export default {
   data: () => {
@@ -139,7 +139,6 @@ export default {
       this.chart();
     },
     parseCoordinates (event: ClipboardEvent, isCurrentLocation: boolean = false) {
-      console.log(event, isCurrentLocation);
       const clipboardData = event.clipboardData;
       if (clipboardData) {
         const pastedData = clipboardData.getData('text/plain');
@@ -238,7 +237,6 @@ export default {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds
       try {
         const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds');
-        console.log(data);
 
         if (data && data.data && data.data.length > 0) {
           const ongoingRound = data.data.pop();
@@ -260,7 +258,6 @@ export default {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers
       try {
         const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers');
-        console.log(data);
 
         if (data && data.data) {
           this.playerNames = data.data;
@@ -279,7 +276,6 @@ export default {
       }
       try {
         const data = await axios.get(`https://tpg.tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=${this.discordUsername}`);
-        console.log(data);
         if (data && data.data) {
           const points = data.data as Point[];
           points.forEach(p => {
@@ -329,13 +325,38 @@ export default {
       }
       return '';
     },
+    latLongToCartesian (latitude: number, longitude: number) {
+      const phi = (90 - latitude) * Math.PI / 180;
+      const theta = longitude * Math.PI / 180;
+      const x = Math.sin(phi) * Math.cos(theta);
+      const y = Math.sin(phi) * Math.sin(theta);
+      const z = Math.cos(phi);
+      return [x, y, z];
+    },
+    sphericalArea (a: number[], b: number[], c: number[]) {
+      const  t = Math.abs(dot(a, cross(b, c))) / (1 + dot(a, b) + dot(b, c) + dot(a, c));
+      return 2 * Math.atan(t);
+    },
     area (index: number) {
       const meshItem = this.mesh.features[index];
-      const result = area(meshItem);
-      if (result > 1000000) {
-        return (result / 1000000).toFixed(2) + 'sq. km';
+      // Make triangles from coords list
+      let area = 0;
+      const triangles = (meshItem.geometry as Polygon).coordinates[0].length - 3;
+      for (let i = 0; i < triangles; i++) {
+        const a = (meshItem.geometry as Polygon).coordinates[0][0];
+        const b = (meshItem.geometry as Polygon).coordinates[0][i + 1];
+        const c = (meshItem.geometry as Polygon).coordinates[0][i + 2];
+        const sphericalArea = this.sphericalArea(this.latLongToCartesian(a[1], a[0]), this.latLongToCartesian(b[1], b[0]), this.latLongToCartesian(c[1], c[0]));
+        area += sphericalArea;
+      }
+
+      const R = 6371e3;
+      area *= Math.pow(R, 2);
+
+      if (area > 1000000) {
+        return (area / 1000000).toFixed(2) + 'sq. km';
       } else {
-        return result + 'sq. m';
+        return area + 'sq. m';
       }
     }
   },
