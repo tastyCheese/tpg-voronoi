@@ -13,6 +13,7 @@ import axios from 'axios';
 import useClipboard from 'vue-clipboard3';
 import haversine from "@/helpers/haversine.ts";
 import { dot, cross } from 'mathjs';
+import type Round from "@/classes/round.ts";
 
 export default {
   data: () => {
@@ -26,6 +27,7 @@ export default {
       .scale(Math.min(window.innerWidth, window.innerHeight * .9) * zoomLevel);
     const mesh = geoVoronoi([]).polygons() as FeatureCollection;
     return {
+      tab: 'about',
       points,
       land: topojson.feature(topoWorld, topoWorld.objects.land) as FeatureCollection,
       borders: topojson.mesh(topoWorld, topoWorld.objects.countries as GeometryObject, (a, b) => a !== b),
@@ -64,7 +66,8 @@ export default {
       selectedLng: 0,
       playerNames: [],
       discordUsername: '',
-      editIndex: -1
+      editIndex: -1,
+      rounds: [] as Round[]
     };
   },
   computed: {
@@ -233,19 +236,24 @@ export default {
       // TODO Need to convert this into lng lat somehow.
       // this.chart();
     },
-    async getRoundFromTasty() {
+    getRoundFromTasty() {
+      if (this.rounds.length > 0) {
+        const ongoingRound = this.rounds.pop();
+        if (ongoingRound && ongoingRound.ongoing) {
+          if (ongoingRound.latitude && ongoingRound.longitude) {
+            this.currentLatitude = ongoingRound.latitude;
+            this.currentLongitude = ongoingRound.longitude;
+          }
+        }
+      }
+    },
+    async getRoundsFromTasty() {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds
       try {
         const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds');
 
         if (data && data.data && data.data.length > 0) {
-          const ongoingRound = data.data.pop();
-          if (ongoingRound.ongoing) {
-            if (ongoingRound.latitude && ongoingRound.longitude) {
-              this.currentLatitude = ongoingRound.latitude;
-              this.currentLongitude = ongoingRound.longitude;
-            }
-          }
+          this.rounds = data.data as Round[];
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -353,11 +361,38 @@ export default {
       const R = 6371e3;
       area *= Math.pow(R, 2);
 
-      if (area > 1000000) {
-        return (area / 1000000).toFixed(2) + 'sq. km';
+      if (area > 100000000) {
+        return (area / 1000000).toFixed(0) + 'km<sup>2</sup>';
+      } else if (area > 10000000) {
+        return (area / 1000000).toFixed(1) + 'km<sup>2</sup>';
+      }  else if (area > 1000000) {
+        return (area / 1000000).toFixed(2) + 'km<sup>2</sup>';
       } else {
-        return area + 'sq. m';
+        return area + 'km<sup>2</sup>';
       }
+    },
+    closest (round: Round) {
+      const index = geoVoronoi(this.arrayPoints).find(round.longitude, round.latitude);
+      return this.points[index];
+    },
+    closestLabel (round: Round) {
+      const point = this.closest(round);
+      return point.label;
+    },
+    closestDistance (round: Round) {
+      const point = this.closest(round);
+      const distance = haversine(round.latitude, round.longitude, point.latitude, point.longitude);
+      if (distance > 10000) {
+        return (distance / 1000).toFixed(2) + 'km';
+      } else if (distance > 2000) {
+        return (distance / 1000).toFixed(3) + 'km';
+      } else {
+        return distance + 'm';
+      }
+    },
+    loadRound (round: Round) {
+      this.currentLongitude = round.longitude;
+      this.currentLatitude = round.latitude;
     }
   },
   watch: {
@@ -388,12 +423,14 @@ export default {
     this.context = (this.$refs.canvas as HTMLCanvasElement).getContext('2d') ?? undefined;
     this.path = d3.geoPath(this.projection, this.context).pointRadius(1.5);
     if (this.arrayPoints.length > 0) {
+      // TODO - geoVoronoi should only be done once
       this.mesh = geoVoronoi(this.arrayPoints).polygons() as FeatureCollection;
       this.found = geoVoronoi(this.arrayPoints).find(this.currentLongitude, this.currentLatitude);
       this.antipodeFound = geoVoronoi(this.arrayPoints).find(this.currentLongitude + 180 > 180 ? this.currentLongitude - 180 : this.currentLongitude + 180, -this.currentLatitude);
     }
     this.chart();
     this.getPlayersFromTasty();
+    this.getRoundsFromTasty();
   }
 };
 </script>
@@ -432,45 +469,63 @@ export default {
       </div>
       <canvas ref="canvas" :height="height" :width="width" @wheel="wheelZoom($event)"></canvas>
     </div>
-    <div class="message is-primary">
-      <div class="message-body">
-        <p>Made for <a href="https://bit.ly/tpgrules">Travel Picture Game</a> by scottytremaine. Check out the <a href="https://github.com/npfedwards/tpg-voronoi">Github repository</a> if you want to contribute.</p>
-        <p>Add your photo locations below to display a voronoi diagram of the area closest to each photo. Any changes are saved to your localStorage (like cookies), and are not uploaded or anything.</p>
+    <div class="section">
+      <div class="tabs">
+        <ul>
+          <li :class="{'is-active': tab === 'about'}"><a @click="tab = 'about'">About</a></li>
+          <li :class="{'is-active': tab === 'pictures'}"><a @click="tab = 'pictures'">Pictures</a></li>
+          <li :class="{'is-active': tab === 'stats'}"><a @click="tab = 'stats'">Stats</a></li>
+          <li :class="{'is-active': tab === 'history'}"><a @click="tab = 'history'">Historic Rounds</a></li>
+        </ul>
+      </div>
+    </div>
+    <section class="section content" v-if="tab === 'about'">
+      <div class="box">
+        <h3 class="is-size-3">Travel Pics Game Voronoi Generator</h3>
+        <p>Made for <a href="https://bit.ly/tpgrules">Travel Picture Game</a> and maintained by <a href="https://github.com/npfedwards">scottytremaine (Nathan Edwards)</a>.</p>
+        <p>Check out the <a href="https://github.com/npfedwards/tpg-voronoi">Github repository</a> if you want to contribute with code or ideas.</p>
+        <h4 class="is-size-4">Contributors</h4>
+        <ul>
+          <li><a href="https://github.com/tastyCheese">tastyCheese (Gleb Pavliuk)</a></li>
+        </ul>
+        <h4 class="is-size-4">How to use</h4>
+        <p>Add your photo locations in the pictures tab to display a voronoi diagram of the area closest to each photo. Any changes are saved to your localStorage (like cookies), and are not uploaded away from your device. If you wish to transfer between devices, export a CSV and then import that same CSV on a new device.</p>
         <p>Pasting a lat, long into the latitude box will auto split them for you.</p>
         <p>Import a csv (comma separated values - can be exported from excel) file with no column headers, columns should be latitude (req), longitude (req), label (opt), url (opt). Any repeat locations will be replaced, otherwise they will be added.</p>
       </div>
-    </div>
-    <div class="field has-addons">
-      <div class="control">
-        <button class="button is-small is-static">Import CSV</button>
+    </section>
+    <section class="section" v-if="tab === 'pictures'">
+      <div class="field has-addons">
+        <div class="control">
+          <button class="button is-small is-static">Import CSV</button>
+        </div>
+        <div class="control">
+          <input class="input is-small" type="file" ref="csv" @change="readFile()" />
+        </div>
+        <div class="control">
+          <button class="button is-small is-info" @click="importCsv()">Import CSV</button>
+        </div>
+        <div class="control">
+          <button class="button is-small is-primary" @click="downloadCsv()">Export CSV</button>
+        </div>
       </div>
-      <div class="control">
-        <input class="input is-small" type="file" ref="csv" @change="readFile()" />
+      <div class="field has-addons">
+        <div class="control">
+          <button class="button is-small is-static">Import Previously Submitted</button>
+        </div>
+        <div class="control">
+          <datalist id="players-from-tasty">
+            <option v-for="player in playerNames" :key="player" :value="player"></option>
+          </datalist>
+          <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordUsername">
+        </div>
+        <div class="control">
+          <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
+        </div>
       </div>
-      <div class="control">
-        <button class="button is-small is-info" @click="importCsv()">Import CSV</button>
-      </div>
-      <div class="control">
-        <button class="button is-small is-primary" @click="downloadCsv()">Export CSV</button>
-      </div>
-    </div>
-    <div class="field has-addons">
-      <div class="control">
-        <button class="button is-small is-static">Import Previously Submitted</button>
-      </div>
-      <div class="control">
-        <datalist id="players-from-tasty">
-          <option v-for="player in playerNames" :key="player" :value="player"></option>
-        </datalist>
-        <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordUsername">
-      </div>
-      <div class="control">
-        <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
-      </div>
-    </div>
-    <div class="table-container">
-      <table class="table">
-        <thead>
+      <div class="table-container">
+        <table class="table">
+          <thead>
           <tr>
             <td></td>
             <th>Latitude</th>
@@ -478,24 +533,19 @@ export default {
             <th></th>
             <th>Label</th>
             <th>Image</th>
-            <th>Distance</th>
-            <th>Antipode Dist.</th>
-            <th>Area</th>
             <th></th>
           </tr>
-        </thead>
-        <tbody>
-        <tr>
-          <td></td>
-          <td><input type="number" class="input is-small" v-model.number="latitude" @paste.prevent="parseCoordinates"></td>
-          <td><input type="number" class="input is-small" v-model.number="longitude"></td>
-          <td></td>
-          <td><input type="text" class="input is-small" placeholder="Label" v-model="label"></td>
-          <td><input type="text" class="input is-small" placeholder="URL" v-model="url"></td>
-          <td></td>
-          <td></td>
-          <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
-        </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td></td>
+            <td><input type="number" class="input is-small" v-model.number="latitude" @paste.prevent="parseCoordinates"></td>
+            <td><input type="number" class="input is-small" v-model.number="longitude"></td>
+            <td></td>
+            <td><input type="text" class="input is-small" placeholder="Label" v-model="label"></td>
+            <td><input type="text" class="input is-small" placeholder="URL" v-model="url"></td>
+            <td><button @click="addPoints()" class="button is-small is-primary">+</button></td>
+          </tr>
           <tr v-for="(point, index) in points" :key="index" :style="highlightLine(index)">
             <td :style="backgroundColour(index)">&nbsp;</td>
             <td v-if="editIndex === index"><input type="number" class="input is-small" v-model.number="point.latitude"></td>
@@ -507,9 +557,6 @@ export default {
             <td v-else :class="{'has-text-white': highlightLine(index)}">{{ point.label }}</td>
             <td v-if="editIndex === index"><input type="text" class="input is-small" placeholder="URL" v-model="point.url"></td>
             <td v-else><img v-if="point.url" :src="point.url" class="thumbnail" :alt="point.label"></td>
-            <td :class="{'has-text-white': highlightLine(index)}">{{ distance(point) }}</td>
-            <td :class="{'has-text-white': highlightLine(index)}">{{ antipodeDistance(point) }}</td>
-            <td :class="{'has-text-white': highlightLine(index)}">{{ area(index) }}</td>
             <td>
               <div class="field has-addons">
                 <div class="control">
@@ -522,8 +569,65 @@ export default {
               </div>
             </td>
           </tr>
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="section" v-if="tab === 'stats'">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+          <tr>
+            <td></td>
+            <th>Lat.</th>
+            <th>Long.</th>
+            <th>Label</th>
+            <th>Distance</th>
+            <th>Antipode Dist.</th>
+            <th>Area</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(point, index) in points" :key="index" :style="highlightLine(index)">
+            <td :style="backgroundColour(index)">&nbsp;</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ point.latitude.toFixed(3) }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ point.longitude.toFixed(3) }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ point.label }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ distance(point) }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ antipodeDistance(point) }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}" v-html="area(index)"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="section" v-if="tab === 'history'">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Round</th>
+              <th>Latitude</th>
+              <th>Longitude</th>
+              <th>Water?</th>
+              <th>Best Image</th>
+              <th>Distance</th>
+              <th>Load</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(round, index) in rounds" :key="index">
+              <td>{{ round.number }}</td>
+              <td>{{ round.latitude }}</td>
+              <td>{{ round.longitude }}</td>
+              <td>{{ round.water }}</td>
+              <td>{{ closestLabel(round) }}</td>
+              <td>{{ closestDistance(round) }}</td>
+              <td><button class="button is-small is-success" @click="loadRound(round)">Load</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
 </template>
