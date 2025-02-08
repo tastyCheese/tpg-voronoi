@@ -98,6 +98,19 @@ export default {
         return colours;
       }
       return this.colours;
+    },
+    closests () {
+      console.log(this.rounds);
+      const cl = this.rounds.map(round => {
+        const point = this.closest(round);
+        const distance = this.closestDistanceNumber(round);
+        return {
+          point,
+          distance
+        };
+      });
+      console.log(cl);
+      return cl;
     }
   },
   methods: {
@@ -253,7 +266,7 @@ export default {
         const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds');
 
         if (data && data.data && data.data.length > 0) {
-          this.rounds = data.data as Round[];
+          this.rounds = data.data.reverse() as Round[];
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -379,9 +392,27 @@ export default {
       const point = this.closest(round);
       return point.label;
     },
-    closestDistance (round: Round) {
+    closestDistanceNumber (round: Round): number {
       const point = this.closest(round);
-      const distance = haversine(round.latitude, round.longitude, point.latitude, point.longitude);
+      return haversine(round.latitude, round.longitude, point.latitude, point.longitude);
+    },
+    closestDistance (round: Round) {
+      const distance = this.closestDistanceNumber(round);
+      if (distance > 10000) {
+        return (distance / 1000).toFixed(2) + 'km';
+      } else if (distance > 2000) {
+        return (distance / 1000).toFixed(3) + 'km';
+      } else {
+        return distance + 'm';
+      }
+    },
+    closestRoundDistance (point: Point) {
+      const rounds = this.closests.filter(p => p.point === point);
+      if (rounds.length === 0) {
+        return '';
+      }
+      rounds.sort((a, b) => a.distance - b.distance);
+      const distance = rounds[0].distance;
       if (distance > 10000) {
         return (distance / 1000).toFixed(2) + 'km';
       } else if (distance > 2000) {
@@ -585,6 +616,8 @@ export default {
             <th>Distance</th>
             <th>Antipode Dist.</th>
             <th>Area</th>
+            <th># rounds best</th>
+            <th>Closest Dist.</th>
           </tr>
           </thead>
           <tbody>
@@ -596,6 +629,8 @@ export default {
             <td :class="{'has-text-white': highlightLine(index)}">{{ distance(point) }}</td>
             <td :class="{'has-text-white': highlightLine(index)}">{{ antipodeDistance(point) }}</td>
             <td :class="{'has-text-white': highlightLine(index)}" v-html="area(index)"></td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ closests.filter(a => a.point === point).length }}</td>
+            <td :class="{'has-text-white': highlightLine(index)}">{{ closestRoundDistance(point) }}</td>
           </tr>
           </tbody>
         </table>
