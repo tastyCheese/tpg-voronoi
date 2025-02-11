@@ -251,7 +251,7 @@ export default {
     },
     getRoundFromTasty() {
       if (this.rounds.length > 0) {
-        const ongoingRound = this.rounds.pop();
+        const ongoingRound = this.rounds[0];
         if (ongoingRound && ongoingRound.ongoing) {
           if (ongoingRound.latitude && ongoingRound.longitude) {
             this.currentLatitude = ongoingRound.latitude;
