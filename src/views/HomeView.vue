@@ -263,7 +263,7 @@ export default {
     async getRoundsFromTasty() {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds
       try {
-        const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds');
+        const data = await axios.get('https://tpg.tastedcheese.site/api/getRounds');
 
         if (data && data.data && data.data.length > 0) {
           this.rounds = data.data.reverse() as Round[];
@@ -278,10 +278,10 @@ export default {
     async getPlayersFromTasty() {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers
       try {
-        const data = await axios.get('https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers');
+        const data = await axios.get('https://tpg.tastedcheese.site/api/getPlayers');
 
         if (data && data.data) {
-          this.playerNames = data.data;
+          this.playerNames = data.data.map(a => a.name);
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -296,7 +296,7 @@ export default {
         return;
       }
       try {
-        const data = await axios.get(`https://tpg.tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=${this.discordUsername}`);
+        const data = await axios.get(`https://tpg.tastedcheese.site/api/getUserSubmissions&name=${this.discordUsername}`);
         if (data && data.data) {
           const points = data.data as Point[];
           points.forEach(p => {
@@ -368,6 +368,9 @@ export default {
         const b = (meshItem.geometry as Polygon).coordinates[0][i + 1];
         const c = (meshItem.geometry as Polygon).coordinates[0][i + 2];
         const sphericalArea = this.sphericalArea(this.latLongToCartesian(a[1], a[0]), this.latLongToCartesian(b[1], b[0]), this.latLongToCartesian(c[1], c[0]));
+        if (sphericalArea < 0) {
+          console.log(i, sphericalArea, a, b, c, this.latLongToCartesian(a[1], a[0]), this.latLongToCartesian(b[1], b[0]), this.latLongToCartesian(c[1], c[0]));
+        }
         area += sphericalArea;
       }
 
