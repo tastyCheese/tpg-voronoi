@@ -14,6 +14,8 @@ import useClipboard from 'vue-clipboard3';
 import haversine from "@/helpers/haversine.ts";
 import { dot, cross } from 'mathjs';
 import type Round from "@/classes/round.ts";
+import type Player from "@/classes/player.ts";
+import type Submission from "@/classes/submission.ts";
 
 export default {
   data: () => {
@@ -64,8 +66,8 @@ export default {
       selectedY: 0,
       selectedLat: 0,
       selectedLng: 0,
-      playerNames: [],
-      discordUsername: '',
+      players: [] as Player[],
+      discordId: '',
       editIndex: -1,
       rounds: [] as Round[]
     };
@@ -263,10 +265,13 @@ export default {
     async getRoundsFromTasty() {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getRounds
       try {
-        const data = await axios.get('https://tpg.tastedcheese.site/api/getRounds');
+        const data = await axios.get('https://travelpicsgame.com/api/v1/rounds');
 
         if (data && data.data && data.data.length > 0) {
-          this.rounds = data.data.reverse() as Round[];
+          this.rounds = data.data as Round[];
+          this.rounds.sort((a, b) => {
+            return a.number < b.number ? -1 : a.number > b.number ? 1 : 0;
+          });
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -278,10 +283,10 @@ export default {
     async getPlayersFromTasty() {
       // https://tpg.tastedcheese.site/php/db_utils.php?func=getPlayers
       try {
-        const data = await axios.get('https://tpg.tastedcheese.site/api/getPlayers');
+        const data = await axios.get('https://travelpicsgame.com/api/v1/players');
 
         if (data && data.data) {
-          this.playerNames = data.data.map(a => a.name);
+          this.players = data.data as Player[];
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -292,19 +297,27 @@ export default {
     },
     async importFromTasty () {
       // https://tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=scottytremaine
-      if (!this.discordUsername) {
+      if (!this.discordId) {
         return;
       }
       try {
-        const data = await axios.get(`https://tpg.tastedcheese.site/api/getUserSubmissions&name=${this.discordUsername}`);
+        const data = await axios.get(`https://travelpicsgame.com/api/v1/submissions/user/${this.discordId}`);
         if (data && data.data) {
-          const points = data.data as Point[];
+          const points = data.data as Submission[];
+          points.sort((a, b) => {
+            return a.round < b.round ? -1 : a.round > b.round ? 1 : 0;
+          });
           points.forEach(p => {
             const index = this.points.findIndex(point => point.latitude.toFixed(5) === p.latitude.toFixed(5) && point.longitude.toFixed(5) === p.longitude.toFixed(5));
             if (index > -1) {
               // this.points[index] = p; Do not overwrite
+              if (this.points[index].label.startsWith('Rounds')) {
+                this.points[index].label += `, ${p.round}`;
+              } else if (this.points[index].label.startsWith('Round')) {
+                this.points[index].label = this.points[index].label.replace('Round', 'Rounds') + `, ${p.round}`;
+              }
             } else {
-              this.points.push(p);
+              this.points.push(new Point(p.longitude, p.latitude, `Round ${p.round}`, ''));
             }
           });
           this.update();
@@ -549,9 +562,9 @@ export default {
         </div>
         <div class="control">
           <datalist id="players-from-tasty">
-            <option v-for="player in playerNames" :key="player" :value="player"></option>
+            <option v-for="player in players" :key="player.name" :value="player.discord_id"></option>
           </datalist>
-          <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordUsername">
+          <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordId">
         </div>
         <div class="control">
           <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
