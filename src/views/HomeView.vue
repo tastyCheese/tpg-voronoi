@@ -16,8 +16,10 @@ import { dot, cross } from 'mathjs';
 import type Round from "@/classes/round.ts";
 import type Player from "@/classes/player.ts";
 import type Submission from "@/classes/submission.ts";
+import Multiselect from "vue-multiselect";
 
 export default {
+  components: { Multiselect },
   data: () => {
     const topoWorld: Topology<Objects<GeoJsonProperties>> = world as unknown as Topology<Objects<GeoJsonProperties>>;
     const points: Point[] = [];
@@ -67,7 +69,7 @@ export default {
       selectedLat: 0,
       selectedLng: 0,
       players: [] as Player[],
-      discordId: '',
+      selectedPlayer: undefined as Player | undefined,
       editIndex: -1,
       rounds: [] as Round[]
     };
@@ -270,8 +272,9 @@ export default {
         if (data && data.data && data.data.length > 0) {
           this.rounds = data.data as Round[];
           this.rounds.sort((a, b) => {
-            return a.number < b.number ? -1 : a.number > b.number ? 1 : 0;
+            return a.number > b.number ? -1 : a.number < b.number ? 1 : 0;
           });
+          console.log(this.rounds);
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -287,6 +290,9 @@ export default {
 
         if (data && data.data) {
           this.players = data.data as Player[];
+          this.players.sort((a, b) => {
+            return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0;
+          });
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -297,11 +303,11 @@ export default {
     },
     async importFromTasty () {
       // https://tastedcheese.site/php/db_utils.php?func=getUserSubmissions&name=scottytremaine
-      if (!this.discordId) {
+      if (!this.selectedPlayer) {
         return;
       }
       try {
-        const data = await axios.get(`https://travelpicsgame.com/api/v1/submissions/user/${this.discordId}`);
+        const data = await axios.get(`https://travelpicsgame.com/api/v1/submissions/user/${this.selectedPlayer.discord_id}`);
         if (data && data.data) {
           const points = data.data as Submission[];
           points.sort((a, b) => {
@@ -482,6 +488,8 @@ export default {
 };
 </script>
 
+<style src="bulma-multiselect/css/bulma-multiselect.min.css"></style>
+
 <template>
   <main>
     <div ref="container" class="main-container" style="margin-top: 40px;">
@@ -561,10 +569,10 @@ export default {
           <button class="button is-small is-static">Import Previously Submitted</button>
         </div>
         <div class="control">
-          <datalist id="players-from-tasty">
-            <option v-for="player in players" :key="player.name" :value="player.discord_id"></option>
-          </datalist>
-          <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordId">
+          <multiselect class="multiselect is-small" :options="players" :custom-label="(player: Player) => `${player.name} (${player.username})`" track-by="discord_id" placeholder="Discord Name" :show-labels="false" v-model="selectedPlayer">
+<!--            <template v-slot:singleLabel="{ option }">{{ option.name }} ({{ option.username }})</template>-->
+          </multiselect>
+<!--          <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordId">-->
         </div>
         <div class="control">
           <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
