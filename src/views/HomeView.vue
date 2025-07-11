@@ -569,10 +569,7 @@ export default {
           <button class="button is-small is-static">Import Previously Submitted</button>
         </div>
         <div class="control">
-          <multiselect class="multiselect is-small" :options="players" :custom-label="(player: Player) => `${player.name} (${player.username})`" track-by="discord_id" placeholder="Discord Name" :show-labels="false" v-model="selectedPlayer">
-<!--            <template v-slot:singleLabel="{ option }">{{ option.name }} ({{ option.username }})</template>-->
-          </multiselect>
-<!--          <input class="input is-small" type="text" placeholder="Discord Name" list="players-from-tasty" autocomplete="off" v-model="discordId">-->
+          <multiselect class="multiselect is-small" :options="players" :custom-label="(player: Player) => `${player.name} (${player.username})`" track-by="discord_id" placeholder="Discord Name" :show-labels="false" v-model="selectedPlayer" />
         </div>
         <div class="control">
           <button class="button is-small is-info" @click="importFromTasty()">Import from tpg.tastedcheese.site</button>
